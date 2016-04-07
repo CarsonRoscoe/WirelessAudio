@@ -9,6 +9,7 @@
 #   - assumes default Qt installation directory of C:\Qt\Qt5.x.x
 
 TARGET="all"
+qtDIR="/c/Qt/Qt5.6.0/5.6/msvc2015_64/bin/windeployqt.exe"
 
 while getopts ":cs" opt; do
   case $opt in
@@ -37,10 +38,10 @@ clientpath=$(readlink -f ./build-ComAudioClient*/debug/ComAudioClient.exe)
 
 if [[ $TARGET == "all" ]]; then
     echo "building client and server..."
-    (exec "/c/Qt/Qt5.6.0/5.6/msvc2015_64/bin/windeployqt.exe" $clientpath)
-    (exec "/c/Qt/Qt5.6.0/5.6/msvc2015_64/bin/windeployqt.exe" $serverpath)
+    (exec $qtDIR $clientpath)
+    (exec $qtDIR $serverpath)
 elif [[ $TARGET == "c" ]]; then
-    (exec "/c/Qt/Qt5.6.0/5.6/msvc2015_64/bin/windeployqt.exe" $clientpath)
+    (exec $qtDIR $clientpath)
 elif [[ $TARGET == "s" ]]; then
-    (exec "/c/Qt/Qt5.6.0/5.6/msvc2015_64/bin/windeployqt.exe" $serverpath)
+    (exec $qtDIR $serverpath)
 fi
