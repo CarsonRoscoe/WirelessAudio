@@ -85,7 +85,7 @@ int ClientSendSetup(char* addr)
         qDebug() << "DLL not found!\n";
 		return -1;
 	}
-
+    qDebug() << "test";
     // TCP Open Socket
     if ((sendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {

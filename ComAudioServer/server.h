@@ -8,6 +8,7 @@
 ///////////////////// Macros //////////////////////////////
 #define SERVER_DEFAULT_PORT	7001
 #define CLIENT_DEFAULT_PORT	7002
+#define SONG_REQUEST_PORT   7004
 #define FILENAMESIZE		100
 #define ERRORSIZE			512
 #define CLIENT_PACKET_SIZE  8192
@@ -38,11 +39,10 @@ typedef struct _SOCKET_INFORMATION {
 extern SOCKET listenSock, acceptSock;
 extern struct sockaddr_in server;
 extern WSAEVENT acceptEvent;
-extern HANDLE hReceiveFile;
-extern bool hReceiveOpen;
 extern LPSOCKET_INFORMATION SI;
 extern char errMsg[ERRORSIZE];
 extern CircularBuffer* circularBufferRecv;
+extern int receivedSongNum;
 // Sending
 extern char address[100];
 extern SOCKET sendSock;
@@ -55,7 +55,7 @@ extern struct sockaddr_in server;
 // Receiving
 void ShowLastErr(bool wsa);
 int ServerReceiveSetup();
-int ServerListen(HANDLE hFile);
+int ServerListen();
 DWORD WINAPI ServerListenThread(LPVOID lpParameter);
 void ServerCleanup();
 DWORD WINAPI ServerReceiveThread(LPVOID lpParameter);

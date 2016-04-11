@@ -502,8 +502,7 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0)
     {
-        closesocket(SI->Socket);
-        acceptSockOpen = false;
+        ClientCleanup();
         GlobalFree(SI);
         return;
     }
@@ -547,8 +546,7 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         qDebug() << "Closing socket " << p2pSI->Socket;
 
     if (Error != 0 || BytesTransferred == 0) {
-        closesocket(p2pSI->Socket);
-        acceptSockOpen = false;
+        ClientCleanup();
         GlobalFree(p2pSI);
         return;
     }

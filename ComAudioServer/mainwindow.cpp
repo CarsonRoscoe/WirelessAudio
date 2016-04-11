@@ -84,17 +84,9 @@ void MainWindow::on_openInBtn_clicked()
 {
     if (ServerReceiveSetup() == 0)
     {
-        QFile *file = new QFile(QFileDialog::getSaveFileName(this, tr("Pick The Destination Song Name"), 0, tr("Music (*.wav)")));
-        if (file->fileName() != NULL)
-        {
-            ui->openInBtn->setEnabled(false);
-            ui->closeInBtn->setEnabled(true);
-            file->open(QIODevice::WriteOnly);
-            ServerListen((HANDLE) _get_osfhandle(file->handle()));
-        } else
-        {
-            ServerCleanup();
-        }
+        ui->openInBtn->setEnabled(false);
+        ui->closeInBtn->setEnabled(true);
+        ServerListen();
     }
 }
 

@@ -33,16 +33,16 @@
 #include <QDebug>
 #include <QString>
 #include <QBuffer>
+#include <tchar.h>
 #include "server.h"
 
 ////////// "Real" of the externs in Server.h ///////////////
 SOCKET listenSock, acceptSock;
 bool listenSockOpen, acceptSockOpen;
 WSAEVENT acceptEvent;
-HANDLE hReceiveFile;
-bool hReceiveOpen;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
+int receivedSongNum = 0;
 
 ////////////////// Debug vars ///////////////////////////////
 #define DEBUG_MODE
@@ -154,13 +154,13 @@ int ServerReceiveSetup()
 --      This is the qt-friendly (non-threaded) function called by the GUI to start the
 --      listening for and receiving of file transfer data through threaded function calls.
 ---------------------------------------------------------------------------------------*/
-int ServerListen(HANDLE hFile)
+int ServerListen()
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hReceiveOpen = true;
+    LPVOID nothing;
 
-    if ((hThread = CreateThread(NULL, 0, ServerListenThread, (LPVOID) hFile, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ServerListenThread, nothing, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerListenThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
@@ -374,8 +374,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0)
     {
-        closesocket(SI->Socket);
-        acceptSockOpen = false;
+        ServerCleanup();
         GlobalFree(SI);
         return;
     }
@@ -445,7 +444,17 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    hReceiveFile = (HANDLE) lpParameter;
+    TCHAR *filename = (char *)calloc(25, sizeof(char));;
+    TCHAR *num = (char *)calloc(4, sizeof(char));;
+    _stprintf(num, "%d", receivedSongNum);
+    _tcscat(filename, "Library\receivedSong");
+    _tcscat(filename, num);
+    _tcscat(filename, ".wav");
+
+    CreateDirectory(TEXT("Library"), NULL);
+    DeleteFile((LPCWSTR)filename);
+    HANDLE hFile = CreateFile((LPCWSTR)filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
 
     while(!lastPacket)
     {
@@ -466,6 +475,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                                 if (writeBuf[e] == 'm') {
                                     lastPacket = true;
                                     packetSize = a - 1;
+                                    receivedSongNum++;
 #ifdef DEBUG_MODE
                                     qDebug() << "Last packet";
 #endif
@@ -500,15 +510,15 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                     }
                 }
             }
-            if (WriteFile(hReceiveFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
+            if (WriteFile(hFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
                 qDebug() << "Couldn't write to server file\n";
                 ShowLastErr(false);
                 return FALSE;
             }
 #ifdef DEBUG_MODE
-            qDebug() << "Bytes to write:" << packetSize;
-            qDebug() << "\nBytes written:" << byteswrittenfile;
+            qDebug() << "\nBytes to write:" << packetSize;
+            qDebug() << "Bytes written:" << byteswrittenfile;
             qDebug() << "Total bytes written:" << (totalbyteswritten += byteswrittenfile);
 #endif
         }
@@ -552,11 +562,6 @@ void ServerCleanup()
     {
         closesocket(listenSock);
         listenSockOpen = false;
-    }
-    if (hReceiveOpen)
-    {
-        CloseHandle(hReceiveFile);
-        hReceiveOpen = false;
     }
     if (hSendOpen)
     {
