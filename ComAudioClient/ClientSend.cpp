@@ -11,15 +11,20 @@
 //#pragma comment(lib, "Ws2_32.lib")
 
 ////////// "Real" of the externs in Client.h ///////////////
-char address[100];
-SOCKET sendSock;
-bool sendSockOpen;
-struct sockaddr_in server;
+char address[100], p2pAddress[100];
+SOCKET sendSock, p2pSendSock;
+bool sendSockOpen, p2pSendSockOpen;
+struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
 
 /////////////////// Globals ////////////////////////////////
 HANDLE hSendFile;
 bool hSendOpen;
+
+//////////////////// Debug vars ///////////////////////////
+#define DEBUG_MODE
+int totalbytessent;
+
 
 int ClientSendSetup(char* addr)
 {
@@ -93,6 +98,53 @@ int ClientSendSetup(char* addr)
 	return 0;
 }
 
+int ClientSendSetupP2P(char* addr) {
+    WSADATA WSAData;
+    WORD wVersionRequested;
+    struct hostent	*hp;
+    strcpy(p2pAddress, addr);
+
+    wVersionRequested = MAKEWORD(2, 2);
+    if (WSAStartup(wVersionRequested, &WSAData) != 0) {
+        ShowLastErr(true);
+        qDebug() << "DLL not found";
+        return -1;
+    }
+
+    // TCP Open Socket
+    if ((p2pSendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        ShowLastErr(true);
+        qDebug() << "Cannot create tcp socket";
+        return -1;
+    }
+
+    // Initialize and set up the address structure
+    memset((char *)&otherClient, 0, sizeof(struct sockaddr_in));
+    otherClient.sin_family = AF_INET;
+    otherClient.sin_port = htons(P2P_DEFAULT_PORT);
+    if ((hp = gethostbyname(p2pAddress)) == NULL) {
+        ShowLastErr(true);
+        qDebug() << "Unknown server address";
+        return -1;
+    }
+
+    // Copy the server address
+    memcpy((char *)&otherClient.sin_addr, hp->h_addr, hp->h_length);
+
+    // TCP Connecting to the server
+    if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
+        ShowLastErr(true);
+        qDebug() << "Can't connect to server\n";
+        return -1;
+    }
+
+    p2pSendSockOpen = true;
+
+    qDebug() << "Setup success";
+    return 0;
+}
+
+
 int ClientSend(HANDLE hFile)
 {
     HANDLE hThread;
@@ -135,11 +187,11 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
 }
 
 //Written by Carson, Designed by Micah since it follows her other functions design
-int ClientSendMicrophoneData(HANDLE hFile) {
+int ClientSendMicrophoneData() {
     HANDLE hThread;
     DWORD ThreadId;
 
-    if ((hThread = CreateThread(NULL, 0, ClientSendMicrophoneThread, (LPVOID)hFile, 0, &ThreadId)) == NULL) {
+    if ((hThread = CreateThread(NULL, 0, ClientSendMicrophoneThread, 0, 0, &ThreadId)) == NULL) {
         ShowLastErr(false);
         qDebug() << "Create ClientSendMicrophoneThread failed";
         return -1;
@@ -168,13 +220,23 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
         }
         else if (dwBytesRead > 0 && dwBytesRead < (DWORD)CLIENT_PACKET_SIZE)
         {
-            sendbuff[dwBytesRead] = 4;
-            sendbuff[dwBytesRead + 1] = 4;
-            sendbuff[dwBytesRead + 2] = 4;
+            sendbuff[dwBytesRead]     = (int)'d';
+            sendbuff[dwBytesRead + 1] = (int)'e';
+            sendbuff[dwBytesRead + 2] = (int)'l';
+            sendbuff[dwBytesRead + 3] = (int)'i';
+            sendbuff[dwBytesRead + 4] = (int)'m';
+#ifdef DEBUG_MODE
+            qDebug() << "Delimeter attached";
+#endif
         }
 
         // TCP Send
         sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+#ifdef DEBUG_MODE
+        qDebug() << "Read bytes:" << dwBytesRead;
+        qDebug() << "Sent bytes:" << sentBytes;
+        qDebug() << "Total sent bytes:" << (totalbytessent += sentBytes);
+#endif
         // UDP send (if needed in future) //////////////////////
         //sentBytes = sendto(clientparam->sock, sendbuff, clientparam->size, 0, (struct sockaddr *)&sockadd, sizeof(sockadd));
         //ShowLastErr(true);
