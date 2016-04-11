@@ -66,7 +66,7 @@ extern bool listenSockOpen, acceptSockOpen;
 extern WSAEVENT acceptEvent;
 extern HANDLE hReceiveFile;
 extern bool hReceiveOpen;
-extern LPSOCKET_INFORMATION SI;
+extern LPSOCKET_INFORMATION SI, p2pSI;
 extern CircularBuffer* circularBufferRecv;
 
 #endif
