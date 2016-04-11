@@ -82,7 +82,8 @@ void MainWindow::on_resumeBtn_clicked()
 
 void MainWindow::on_skipFwdBtn_clicked()
 {
-    audioManager->skip(10);
+    //audioManager->skip(10);
+    audioManager->playRecord();
 }
 
 void MainWindow::on_skipBkwdBtn_clicked()
@@ -178,14 +179,8 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
-    QIODevice *QID;
-    //QID->open( QIODevice::WriteOnly);
-    QBuffer myQB;
-
-   //QID(myQB);
-   //cb(128000,64000);
-   //dFile.setFileName("../RecordTest.raw");
    microphoneBuffer->open( QIODevice::ReadWrite);
+   listeningBuffer->open(QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
    format.setSampleRate(16000);
@@ -208,7 +203,6 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
-   audioManager->playRecord();
 
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();

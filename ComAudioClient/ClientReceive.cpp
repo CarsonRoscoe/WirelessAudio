@@ -564,7 +564,7 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
     p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
     p2pSI->DataBuf.buf = p2pSI->Buffer;
 
-    SleepEx(10, true);
+    SleepEx(1, true);
     if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
@@ -578,13 +578,10 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
 
 //Carson, designed by Micah
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
-    DWORD byteswrittenfile = 0;
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
-    char delim[6] = {(int)'d', (int)'e', (int)'l', (int)'i', (int)'m', '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
-    hReceiveFile = (HANDLE) lpParameter;
 
     qDebug() << "Enter ClientWriteToFileP2P";
     while(!lastPacket) {
@@ -593,8 +590,54 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
             sizeBuf[5] = '\0';
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
+            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
+                 a < packetSize - 5; a++, b++, c++, d++, e++)
+            {
+                if (writeBuf[a] == 'm') {
+                    if (writeBuf[b] == 'i') {
+                        if (writeBuf[c] == 'l') {
+                            if (writeBuf[d] == 'e') {
+                                if (writeBuf[e] == 'd') {
+                                    packetSize = a - 1;
+#ifdef DEBUG_MODE
+                                    qDebug() << "Last packet";
+#endif
+                                    break;
+                                } else {
+                                    a += 4;
+                                    b += 4;
+                                    c += 4;
+                                    d += 4;
+                                    e += 4;
+                                }
+                            } else {
+                                a += 3;
+                                b += 3;
+                                c += 3;
+                                d += 3;
+                                e += 3;
+                            }
+                        } else {
+                            a += 2;
+                            b += 2;
+                            c += 2;
+                            d += 2;
+                            e += 2;
+                        }
+                    } else {
+                        a++;
+                        b++;
+                        c++;
+                        d++;
+                        e++;
+                    }
+                }
+            }
+
             int cur = listeningBuffer->pos();
-            listeningBuffer->write(writeBuf);
+            int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
+            listeningBuffer->seek(newpos);
+            listeningBuffer->write(writeBuf, packetSize);
             listeningBuffer->seek(cur);
         }
     }

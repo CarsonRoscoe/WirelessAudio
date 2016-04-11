@@ -37,6 +37,7 @@ bool CircularBuffer::pop(QBuffer* buf) {
     buf->seek(buf->size());
     buf->write((const char *)back, BUFFERSIZE);
     buf->seek(curPos);
+    qDebug() << buf->size();
 
     back = (char*)back + elementLength;
     if (back == bufferEnd) {
