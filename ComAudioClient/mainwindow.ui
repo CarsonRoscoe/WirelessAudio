@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>557</width>
-    <height>466</height>
+    <height>479</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,7 +21,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="mediaTab">
        <attribute name="title">
@@ -149,11 +149,8 @@
         </item>
         <item row="0" column="0">
          <widget class="QLineEdit" name="peerIp">
-          <property name="inputMask">
-           <string>000.000.000.000</string>
-          </property>
           <property name="text">
-           <string>127.0.0.1</string>
+           <string/>
           </property>
           <property name="placeholderText">
            <string>Peer IP</string>
@@ -213,11 +210,8 @@
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="0" column="0">
          <widget class="QLineEdit" name="serverIp">
-          <property name="inputMask">
-           <string>000.000.000.000</string>
-          </property>
           <property name="text">
-           <string>127.0.0.1</string>
+           <string/>
           </property>
           <property name="placeholderText">
            <string>Server IP</string>
@@ -267,11 +261,8 @@
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
          <widget class="QLineEdit" name="peerVoiceIp">
-          <property name="inputMask">
-           <string>000.000.000.000</string>
-          </property>
           <property name="text">
-           <string>127.0.0.1</string>
+           <string/>
           </property>
           <property name="placeholderText">
            <string>Peer IP</string>

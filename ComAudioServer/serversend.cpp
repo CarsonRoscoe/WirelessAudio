@@ -1,3 +1,23 @@
+/*---------------------------------------------------------------------------------------
+-- SOURCE FILE: serversend.cpp
+--
+-- PROGRAM:     ComAudioServer
+--
+-- FUNCTIONS:   int ServerSendSetup(char* addr)
+--              int ServerSend(HANDLE hFile)
+--              DWORD WINAPI ServerSendThread(LPVOID lpParameter)
+--
+-- DATE:        March 16, 2008
+--
+-- REVISIONS:   Date and Description)
+--
+-- DESIGNER:    Micah Willems, Carson Roscoe, Spenser Lee, Thomas Yu
+--
+-- PROGRAMMER:  Micah Willems, Carson Roscoe
+--
+-- NOTES:
+--      This is a collection of functions for connecting and sending files to a client
+---------------------------------------------------------------------------------------*/
 ///////////////////// Includes ////////////////////////////
 #ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
@@ -15,7 +35,27 @@ struct sockaddr_in server;
 HANDLE hSendFile;
 bool hSendOpen;
 
-
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ServerSendSetup
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Micah Willems
+--
+--  INTERFACE:      int ServerSendSetup(char* addr)
+--
+--                      char* addr: the ip address to connect to
+--
+--  RETURNS:        Returns 0 on success, -1 on failure
+--
+--	NOTES:
+--      This function sets up the socket for sending a file to the client
+---------------------------------------------------------------------------------------*/
 int ServerSendSetup(char* addr)
 {
     WSADATA WSAData;
@@ -37,13 +77,6 @@ int ServerSendSetup(char* addr)
         qDebug() << "Cannot create tcp socket\n";
         return -1;
     }
-
-    // UDP Open Socket (if needed in future) ////////////////////
-    /*if ((sendSock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-    {
-        qDebug() << "Cannot create udp socket\n";
-        return -1;
-    }*/
 
     // Initialize and set up the address structure
     memset((char *)&server, 0, sizeof(struct sockaddr_in));
@@ -70,23 +103,31 @@ int ServerSendSetup(char* addr)
 
     sendSockOpen = true;
 
-    // UDP Connecting to the server (if needed in future) /////////////
-    // Bind local address to the socket
-    /*memset((char *)&client, 0, sizeof(client));
-    client.sin_family = AF_INET;
-    client.sin_port = htons(0);  // bind to any available port
-    client.sin_addr.s_addr = htonl(INADDR_ANY);
-
-    if (bind(sendSock, (struct sockaddr *)&client, sizeof(client)) == -1)
-    {
-        perror("Can't bind name to socket");
-        return -1;
-    }*/
-
     qDebug() << "Setup success";
     return 0;
 }
 
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ServerSend
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Micah Willems
+--
+--  INTERFACE:      int ServerSend(HANDLE hFile)
+--
+--                      HANDLE hFile: a handle to the file to be sent
+--
+--  RETURNS:        Returns 0 on success, -1 on failure
+--
+--	NOTES:
+--      This is the function that starts the thread to send a file to the client
+---------------------------------------------------------------------------------------*/
 int ServerSend(HANDLE hFile)
 {
     HANDLE hThread;
@@ -102,6 +143,29 @@ int ServerSend(HANDLE hFile)
     return 0;
 }
 
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ServerSendThread
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Micah Willems
+--
+--  INTERFACE:      DWORD WINAPI ServerSendThread(LPVOID lpParameter)
+--
+--                      LPVOID lpParameter: the handle to the file to be sent
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--      This is the threaded function that sends a file to the client. When the last
+--      portion of the data is read, a delimeter is appended to indicate that it's the
+--      end on the client's side.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ServerSendThread(LPVOID lpParameter)
 {
     hSendFile = (HANDLE) lpParameter;
@@ -121,6 +185,7 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
             ServerCleanup();
             return TRUE;
         }
+        // if less than SERVER_PACKET_SIZE was read, then end-of-file must have been encountered
         else if (dwBytesRead > 0 && dwBytesRead < (DWORD)SERVER_PACKET_SIZE)
         {
             sendbuff[dwBytesRead] = 'd';
@@ -132,11 +197,6 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
 
         // TCP Send
         sentBytes = send(sendSock, sendbuff, SERVER_PACKET_SIZE, 0);
-
-        // UDP send (if needed in future) //////////////////////
-        //sentBytes = sendto(clientparam->sock, sendbuff, clientparam->size, 0, (struct sockaddr *)&sockadd, sizeof(sockadd));
-        //ShowLastErr(true);
-        //sentpackets++;
     }
 
     return TRUE;
