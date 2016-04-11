@@ -123,9 +123,11 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
         }
         else if (dwBytesRead > 0 && dwBytesRead < (DWORD)SERVER_PACKET_SIZE)
         {
-            sendbuff[dwBytesRead] = 4;
-            sendbuff[dwBytesRead + 1] = 4;
-            sendbuff[dwBytesRead + 2] = 4;
+            sendbuff[dwBytesRead] = 'd';
+            sendbuff[dwBytesRead + 1] = 'e';
+            sendbuff[dwBytesRead + 2] = 'l';
+            sendbuff[dwBytesRead + 2] = 'i';
+            sendbuff[dwBytesRead + 2] = 'm';
         }
 
         // TCP Send
