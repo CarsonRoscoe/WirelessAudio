@@ -10,11 +10,19 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = ComAudioServer
 TEMPLATE = app
-
+LIBS = -lws2_32
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    circularbuffer.cpp \
+    serverreceive.cpp \
+    serversend.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    circularbuffer.h \
+    server.h
 
 FORMS    += mainwindow.ui
+
+DISTFILES += \
+    ComAudioServer.pro.user
