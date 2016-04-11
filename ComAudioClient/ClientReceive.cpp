@@ -37,7 +37,7 @@ int ClientReceiveSetupP2P() {
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(CLIENT_DEFAULT_PORT);
+    InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
 
     if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
         qDebug() << "bind) failed with error " << WSAGetLastError();
@@ -52,7 +52,7 @@ int ClientReceiveSetupP2P() {
 
     p2pListenSockOpen = true;
 
-    if ((acceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
+    if ((p2pAcceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
         qDebug() << "WSACreateEvent() failed with error " << WSAGetLastError();
         return -1;
     }
@@ -152,6 +152,8 @@ int ClientListenP2P() {
         return -1;
     }
 
+    qDebug () << "Listening for P2P on port " << P2P_DEFAULT_PORT;
+
     return 0;
 }
 
@@ -194,7 +196,7 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
 
     while (TRUE) {
         p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
-
+        qDebug() << "P2P Accepted a request";
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
             qDebug() << "WSASetEvent failed with error " << WSAGetLastError();
             return FALSE;
@@ -312,9 +314,10 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     EventArray[0] = p2pAcceptEvent;
 
     // Wait for accept() to signal an event and also process WorkerRoutine() returns.
+    qDebug() << "ClientReceiveThreadP2P: Preparing to WSAWaitForMultipleEvents";
     while (TRUE) {
         Index = WSAWaitForMultipleEvents(1, EventArray, FALSE, WSA_INFINITE, TRUE);
-
+        qDebug() << "Event Triggered";
         if (Index == WSA_WAIT_FAILED) {
             qDebug() << "WSAWaitForMultipleEvents failed with error " << WSAGetLastError();
             return FALSE;

@@ -27,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
     ClientReceiveSetupP2P();
+    ClientListenP2P();
 
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     QRegExp regex;
