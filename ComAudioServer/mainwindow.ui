@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>466</width>
-    <height>521</height>
+    <height>565</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Server</string>
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
@@ -165,7 +165,6 @@
    <zorder>sendFileBtn</zorder>
    <zorder>startServerBtn</zorder>
    <zorder>startBroadcastBtn</zorder>
-   <zorder>gridLayoutWidget</zorder>
    <zorder>ipAddr</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
