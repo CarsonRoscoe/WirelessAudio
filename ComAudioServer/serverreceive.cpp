@@ -453,7 +453,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 
     CreateDirectory(TEXT("Library"), NULL);
     DeleteFile(filename);
-    HANDLE hFile = CreateFile((LPCWSTR)filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+    HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
     free(filename);
     free(num);
