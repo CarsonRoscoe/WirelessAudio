@@ -227,15 +227,27 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
         microphoneBuffer->seek(0);
         dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE);
 
-        if (dwBytesRead > 0) {
-            // TCP Send
-            sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+        if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
+        {
+            sendbuff[dwBytesRead] = 'm';
+            sendbuff[dwBytesRead+1] = 'i';
+            sendbuff[dwBytesRead+2] = 'l';
+            sendbuff[dwBytesRead+3] = 'e';
+            sendbuff[dwBytesRead+4] = 'd';
+
         }
         if (microphoneBuffer->size() > 0)
+        {
             microphoneBuffer->seek(microphoneBuffer->size()-1);
+        }
+
+        sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+#ifdef DEBUG_MODE
+        qDebug() << "\nRecorded bytes:" << dwBytesRead;
+        qDebug() << "Sent bytes:" << sentBytes;
+#endif
     }
 
-    sprintf(sendbuff, "delim");
     sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
 
     return TRUE;
