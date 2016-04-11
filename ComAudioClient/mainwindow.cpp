@@ -210,7 +210,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    audio->start(microphoneBuffer);
 
    qDebug () << "Setting up peer to peer";
-   ClientSendSetupP2P(ui->peerIp->text().toLatin1().data());
+   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    qDebug () << "Sending microphone data";
    ClientSendMicrophoneData();
    qDebug () << "Peer2Peer instantiated";
