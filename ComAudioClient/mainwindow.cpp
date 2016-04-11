@@ -12,6 +12,7 @@ QFile dFile;
 QAudioInput * audio;
 CircularBuffer * cb, *circularBufferRecv;
 QBuffer *microphoneBuffer, *listeningBuffer;
+QString lastSong;
 bool isRecording;
 bool isPlaying;
 
@@ -22,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     isRecording = false;
     isPlaying = false;
+    lastSong == "";
     audioManager = new AudioManager(this);
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
@@ -42,15 +44,48 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->peerIp->setText("192.168.0.6");
 //    ui->serverIp->setText("192.168.0.6");
 //    ui->peerVoiceIp->setText("192.168.0.6");
-    ui->peerIp->setText("192.168.0.7");
-    ui->serverIp->setText("127.0.0.7");
-    ui->peerVoiceIp->setText("192.168.0.5");
+
+    ui->peerIp->setText("127.0.0.1");
+    ui->serverIp->setText("127.0.0.1");
+    ui->peerVoiceIp->setText("127.0.0.1");
+
+    get_local_files();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
     delete audioManager;
+}
+
+QString MainWindow::get_selected_list_item(int tab) {
+
+    if (tab == 0) {
+        return ui->songList->currentItem()->text();
+    } else {
+        return ui->localFileList->currentItem()->text();
+    }
+}
+
+void MainWindow::get_local_files() {
+
+    ui->localFileList->clear();
+    ui->songList->clear();
+
+    QStringList nameFilter("*.wav");
+
+    QDir directory(QDir::currentPath());
+
+    if (!directory.cd("../AudioFiles")) {
+        qWarning() << "Can't find /AudioFiles directory!";
+    }
+
+    QStringList files = directory.entryList(nameFilter);
+
+    ui->localFileList->addItems(files);
+    ui->songList->addItems(files);
+    ui->localFileList->setCurrentRow(0);
+    ui->songList->setCurrentRow(0);
 }
 
 // ---- Media Player Functions ----
@@ -69,9 +104,28 @@ void MainWindow::on_playPauseBtn_clicked()
         ui->playPauseBtn->setText("Pause");
         isPlaying = true;
 
-        //audioManager->stop();
-        QFile *file = new QFile(QFileDialog::getOpenFileName(this, tr("Pick A Song"), 0, tr("Music (*.wav)")));
-        audioManager->loadSong(file);
+        QDir dir(QDir::currentPath());
+        if (!dir.cd("../AudioFiles")) {
+            qWarning() << "Can't find /AudioFiles directory!";
+        }
+
+        QString fileName = get_selected_list_item(0);
+
+        qDebug() << "fileName = " << fileName;
+        qDebug() << "lastSong = " << lastSong;
+
+        if (fileName == lastSong) {
+            audioManager->resume();
+        } else {
+            if (lastSong != "") {
+                audioManager->stop();
+            }
+            lastSong = fileName;
+
+            QFile *file = new QFile(dir.absoluteFilePath(fileName));
+            audioManager->loadSong(file);
+        }
+
     }
 }
 
