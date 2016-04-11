@@ -40,7 +40,7 @@ bool listenSockOpen, acceptSockOpen, p2pListenSockOpen, p2pAcceptSockOpen;
 WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
 bool hReceiveOpen;
-LPSOCKET_INFORMATION SI;
+LPSOCKET_INFORMATION SI, p2pSI;
 
 //Carson, designed by Micah
 int ClientReceiveSetupP2P() {
@@ -447,6 +447,8 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
         return FALSE;
     }
 
+    SleepEx(10000, true);
+
     return TRUE;
 }
 
@@ -532,41 +534,46 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 }
 
 //Carson, designed by Micah
-void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
+void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
+                                LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
-    SI = (LPSOCKET_INFORMATION)Overlapped;
+    p2pSI = (LPSOCKET_INFORMATION)Overlapped;
 
     if (Error != 0)
         qDebug() << "I/O operation failed with error " << Error;
 
     if (BytesTransferred == 0)
-        qDebug() << "Closing socket " << SI->Socket;
+        qDebug() << "Closing socket " << p2pSI->Socket;
 
     if (Error != 0 || BytesTransferred == 0) {
-        closesocket(SI->Socket);
+        closesocket(p2pSI->Socket);
         acceptSockOpen = false;
-        GlobalFree(SI);
+        GlobalFree(p2pSI);
         return;
     }
 
     char slotsize[SERVER_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(SI->DataBuf.buf)) == false)
+    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
         qDebug() << "Writing received packet to circular buffer failed";
 
     Flags = 0;
-    ZeroMemory(&(SI->Overlapped), sizeof(WSAOVERLAPPED));
+    ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
 
-    SI->DataBuf.len = SERVER_PACKET_SIZE;
-    SI->DataBuf.buf = SI->Buffer;
+    p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
+    p2pSI->DataBuf.buf = p2pSI->Buffer;
 
-    if (WSARecv(SI->Socket, &(SI->DataBuf), 1, &RecvBytes, &Flags, &(SI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+    SleepEx(10, true);
+    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
+        } else {
+            SleepEx(10000, true);
         }
     }
+
 }
 
 //Carson, designed by Micah
@@ -579,16 +586,13 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
     bool lastPacket = false;
     hReceiveFile = (HANDLE) lpParameter;
 
+    qDebug() << "Enter ClientWriteToFileP2P";
     while(!lastPacket) {
         if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0) {
             circularBufferRecv->pop(sizeBuf);
             sizeBuf[5] = '\0';
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
-            if ((ptrEnd = strstr(writeBuf, delim))) {
-                lastPacket = true;
-                packetSize = ptrEnd - ptrBegin;
-            }
             int cur = listeningBuffer->pos();
             listeningBuffer->write(writeBuf);
             listeningBuffer->seek(cur);

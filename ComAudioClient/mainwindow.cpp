@@ -208,12 +208,10 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
+   audioManager->playRecord();
 
-   qDebug () << "Setting up peer to peer";
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
-   qDebug () << "Sending microphone data";
    ClientSendMicrophoneData();
-   qDebug () << "Peer2Peer instantiated";
 }
 
 void MainWindow::on_recordBtn_clicked()
