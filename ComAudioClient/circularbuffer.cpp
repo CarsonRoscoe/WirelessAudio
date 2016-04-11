@@ -50,6 +50,28 @@ bool CircularBuffer::pop(QBuffer* buf) {
     return true;
 }
 
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   pop
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Carson Roscoe
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      pop(char dest[])
+--
+--                      char dest[]: the destination char array to copy to
+--
+--  RETURNS:        Returns false if the buffer is empty, otherwise true
+--
+--	NOTES:
+--      This function removes the element from the back of the circular buffer after
+--      copying it to the char array passed in
+---------------------------------------------------------------------------------------*/
 bool CircularBuffer::pop(char dest[]) {
     if (length == 0) {
         return false;
