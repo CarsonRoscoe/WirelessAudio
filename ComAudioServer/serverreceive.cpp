@@ -17,6 +17,9 @@ bool hReceiveOpen;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
 
+////////////////// Debug vars ///////////////////////////////
+#define DEBUG_MODE
+int totalbytesreceived, totalbyteswritten;
 
 int ServerReceiveSetup()
 {
@@ -252,6 +255,11 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
         qDebug() << "Writing received packet to circular buffer failed";
     }
 
+#ifdef DEBUG_MODE
+    qDebug() << "\nBytes received:" << BytesTransferred;
+    qDebug() << "Total bytes received:" << (totalbytesreceived += BytesTransferred);
+#endif
+
     Flags = 0;
     ZeroMemory(&(SI->Overlapped), sizeof(WSAOVERLAPPED));
 
@@ -275,7 +283,6 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     DWORD byteswrittenfile = 0;
     char sizeBuf[CLIENT_PACKET_SIZE];
     char writeBuf[CLIENT_PACKET_SIZE];
-    char delim[4] = {4, 4, 4, '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
     hReceiveFile = (HANDLE) lpParameter;
@@ -288,10 +295,49 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
             sizeBuf[5] = '\0';
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
-            if ((ptrEnd = strstr(writeBuf, delim)))
+            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
+                 a < packetSize - 5; a++, b++, c++, d++, e++)
             {
-                lastPacket = true;
-                packetSize = ptrEnd - ptrBegin;
+                if (writeBuf[a] == 'd') {
+                    if (writeBuf[b] == 'e') {
+                        if (writeBuf[c] == 'l') {
+                            if (writeBuf[d] == 'i') {
+                                if (writeBuf[e] == 'm') {
+                                    lastPacket = true;
+                                    packetSize = a - 1;
+#ifdef DEBUG_MODE
+                                    qDebug() << "Last packet";
+#endif
+                                    break;
+                                } else {
+                                    a += 4;
+                                    b += 4;
+                                    c += 4;
+                                    d += 4;
+                                    e += 4;
+                                }
+                            } else {
+                                a += 3;
+                                b += 3;
+                                c += 3;
+                                d += 3;
+                                e += 3;
+                            }
+                        } else {
+                            a += 2;
+                            b += 2;
+                            c += 2;
+                            d += 2;
+                            e += 2;
+                        }
+                    } else {
+                        a++;
+                        b++;
+                        c++;
+                        d++;
+                        e++;
+                    }
+                }
             }
             if (WriteFile(hReceiveFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
@@ -299,6 +345,11 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                 ShowLastErr(false);
                 return FALSE;
             }
+#ifdef DEBUG_MODE
+            qDebug() << "Bytes to write:" << packetSize;
+            qDebug() << "\nBytes written:" << byteswrittenfile;
+            qDebug() << "Total bytes written:" << (totalbyteswritten += byteswrittenfile);
+#endif
         }
     }
     return TRUE;

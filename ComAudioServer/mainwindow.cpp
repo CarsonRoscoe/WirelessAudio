@@ -88,7 +88,7 @@ void MainWindow::on_openInBtn_clicked()
         if (file->fileName() != NULL)
         {
             ui->openInBtn->setEnabled(false);
-            ui->disconnectOutBtn->setEnabled(true);
+            ui->closeInBtn->setEnabled(true);
             file->open(QIODevice::WriteOnly);
             ServerListen((HANDLE) _get_osfhandle(file->handle()));
         } else
@@ -101,6 +101,6 @@ void MainWindow::on_openInBtn_clicked()
 void MainWindow::on_closeInBtn_clicked()
 {
     ui->openInBtn->setEnabled(true);
-    ui->disconnectOutBtn->setEnabled(false);
+    ui->closeInBtn->setEnabled(false);
     ServerCleanup();
 }
