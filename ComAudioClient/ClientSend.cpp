@@ -238,7 +238,7 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
 
     sprintf(sendbuff, "%c%c%c", (char)4, (char)4, (char)4);
     sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-
+    free(sendbuff);
     return TRUE;
 }
 
@@ -317,6 +317,7 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
         qDebug() << "Total sent bytes:" << (totalbytessent += sentBytes);
 #endif
     }
+    free(sendbuff);
 	return TRUE;
 }
 

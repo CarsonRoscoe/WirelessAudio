@@ -455,6 +455,8 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     DeleteFile((LPCWSTR)filename);
     HANDLE hFile = CreateFile((LPCWSTR)filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
+    free(filename);
+    free(num);
 
     while(!lastPacket)
     {

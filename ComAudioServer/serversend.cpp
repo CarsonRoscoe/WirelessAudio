@@ -198,6 +198,6 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
         // TCP Send
         sentBytes = send(sendSock, sendbuff, SERVER_PACKET_SIZE, 0);
     }
-
+    free(sendbuff);
     return TRUE;
 }

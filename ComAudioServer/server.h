@@ -3,7 +3,7 @@
 
 #include <winsock2.h>
 #include <Windows.h>
-#include "circularbuffer.h"
+#include "../ComAudioClient/circularbuffer.h"
 
 ///////////////////// Macros //////////////////////////////
 #define SERVER_DEFAULT_PORT	7001
