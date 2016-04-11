@@ -19,7 +19,6 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    ui->setupUi(this);
 
     isRecording = false;
     isPlaying = false;
@@ -31,12 +30,18 @@ MainWindow::MainWindow(QWidget *parent) :
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
     QValidator* val = new QRegExpValidator(regex, this);
+
+    ui->setupUi(this);
+
     ui->peerIp->setValidator(val);
     ui->serverIp->setValidator(val);
-    ui->peerIp->setText("192.168.0.6");
-    ui->serverIp->setText("192.168.0.6");
-//    ui->peerIp->setText("127.0.0.1");
-//    ui->serverIp->setText("127.0.0.1");
+    ui->peerVoiceIp->setValidator(val);
+//    ui->peerIp->setText("192.168.0.6");
+//    ui->serverIp->setText("192.168.0.6");
+//    ui->peerVoiceIp->setText("192.168.0.6");
+    ui->peerIp->setText("127.0.0.1");
+    ui->serverIp->setText("127.0.0.1");
+    ui->peerVoiceIp->setText("127.0.0.1");
 }
 
 MainWindow::~MainWindow()
