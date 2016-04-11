@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->peerVoiceIp->setText("192.168.0.6");
     ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("127.0.0.7");
-    ui->peerVoiceIp->setText("127.0.0.1");
+    ui->peerVoiceIp->setText("192.168.0.5");
 }
 
 MainWindow::~MainWindow()

@@ -177,15 +177,14 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
 
         if (dwBytesRead > 0) {
             // TCP Send
-            sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-            ShowLastErr(true);
+            sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
         }
-
-        microphoneBuffer->seek(microphoneBuffer->size()-1);
+        if (microphoneBuffer->size() > 0)
+            microphoneBuffer->seek(microphoneBuffer->size()-1);
     }
 
-    sprintf(sendbuff, "%c%c%c", (char)4, (char)4, (char)4);
-    sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+    sprintf(sendbuff, "delim");
+    sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
 
     return TRUE;
 }
@@ -309,7 +308,7 @@ void ShowLastErr(bool wsa)
     else {
         dlasterr = GetLastError();
     }
-    sprintf_s(errnum, "Error number: %d\n", dlasterr);
+    sprintf_s(errnum, "Error number: %d", dlasterr);
     qDebug() << errnum;
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
         NULL, dlasterr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&errMsg, 0, NULL);
