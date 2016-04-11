@@ -128,19 +128,23 @@ int ClientSendSetupP2P(char* addr) {
         return -1;
     }
 
+
     // Copy the server address
     memcpy((char *)&otherClient.sin_addr, hp->h_addr, hp->h_length);
+
+    qDebug () << "Attempting to accept request to ip " << p2pAddress << " on port " << P2P_DEFAULT_PORT;
 
     // TCP Connecting to the server
     if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
         ShowLastErr(true);
-        qDebug() << "Can't connect to server\n";
+        qDebug() << "Can't connect to server";
         return -1;
     }
 
+    qDebug () << "Connected!";
+
     p2pSendSockOpen = true;
 
-    qDebug() << "Setup success";
     return 0;
 }
 
