@@ -33,6 +33,8 @@
 #include <QString>
 #include <QBuffer>
 #include "Client.h"
+#include <QFile>
+#include <QTextStream>
 
 ////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
@@ -41,6 +43,8 @@ WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
 bool hReceiveOpen;
 LPSOCKET_INFORMATION SI, p2pSI;
+
+
 
 //Carson, designed by Micah
 int ClientReceiveSetupP2P() {
@@ -578,6 +582,11 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
 
 //Carson, designed by Micah
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
+
+    QString filename = "RecordBufferdata.txt";
+    QFile file(filename);
+    file.open(QIODevice::ReadWrite);
+    QTextStream stream(&file);
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
     int packetSize;
@@ -638,6 +647,10 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
             int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
             listeningBuffer->seek(newpos);
             listeningBuffer->write(writeBuf, packetSize);
+            listeningBuffer->write(writeBuf, packetSize);
+            for(int i =0; i < packetSize;i++){
+                stream <<writeBuf[i];
+            }
             listeningBuffer->seek(cur);
         }
     }

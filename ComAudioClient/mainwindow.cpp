@@ -10,6 +10,7 @@
 
 QFile dFile;
 QAudioInput * audio;
+QAudioInput * audioFile;
 CircularBuffer * cb, *circularBufferRecv;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
@@ -216,7 +217,8 @@ void MainWindow::on_recordBtn_clicked()
 
    //QID(myQB);
   //cb(128000,64000);
-   //dFile.setFileName("../RecordTest.raw");
+   dFile.setFileName("../RecordTest.raw");
+   dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -234,12 +236,16 @@ void MainWindow::on_recordBtn_clicked()
        format = info.nearestFormat(format);
    }
 
+   audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
+
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
+   audioFile->start(&dFile);
+
 }
 
 void MainWindow::on_stopRecordBtn_clicked()
@@ -247,6 +253,7 @@ void MainWindow::on_stopRecordBtn_clicked()
     isRecording = false;
     qDebug()<<"StopRecordTriggered";
     audio->stop();
+    audioFile->stop();
     audioManager->playRecord();
     //dFile.close();
     //delete audio;
