@@ -444,15 +444,15 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    TCHAR *filename = (char *)calloc(25, sizeof(char));;
-    TCHAR *num = (char *)calloc(4, sizeof(char));;
-    _stprintf(num, "%d", receivedSongNum);
-    _tcscat(filename, "Library\receivedSong");
-    _tcscat(filename, num);
-    _tcscat(filename, ".wav");
+    LPCWSTR filename = (wchar_t *)calloc(25, sizeof(wchar_t));
+    LPCWSTR num = (wchar_t *)calloc(4, sizeof(wchar_t));
+    wsprintfW(num, "%d", receivedSongNum);
+    StringCchCat(filename, 20, "Library\receivedsong");
+    StringCchCat(filename, 3, num);
+    StringCchCat(filename, 4, ".wav");
 
     CreateDirectory(TEXT("Library"), NULL);
-    DeleteFile((LPCWSTR)filename);
+    DeleteFile(filename);
     HANDLE hFile = CreateFile((LPCWSTR)filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
     free(filename);
@@ -476,7 +476,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                             if (writeBuf[d] == 'i') {
                                 if (writeBuf[e] == 'm') {
                                     lastPacket = true;
-                                    packetSize = a - 1;
+                                    packetSize = a;
                                     receivedSongNum++;
 #ifdef DEBUG_MODE
                                     qDebug() << "Last packet";
