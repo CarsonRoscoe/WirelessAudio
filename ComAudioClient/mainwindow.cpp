@@ -11,7 +11,7 @@
 QFile dFile;
 QAudioInput * audio;
 CircularBuffer * cb, *circularBufferRecv;
-QBuffer *microphoneBuffer;
+QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
 bool isPlaying;
 
@@ -24,7 +24,10 @@ MainWindow::MainWindow(QWidget *parent) :
     isPlaying = false;
     audioManager = new AudioManager(this);
     microphoneBuffer = new QBuffer(parent);
-    audioManager->Init(microphoneBuffer);
+    listeningBuffer = new QBuffer(parent);
+    audioManager->Init(listeningBuffer);
+    ClientReceiveSetupP2P();
+    ClientListenP2P();
 
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     QRegExp regex;
@@ -39,8 +42,8 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->peerIp->setText("192.168.0.6");
 //    ui->serverIp->setText("192.168.0.6");
 //    ui->peerVoiceIp->setText("192.168.0.6");
-    ui->peerIp->setText("127.0.0.1");
-    ui->serverIp->setText("127.0.0.1");
+    ui->peerIp->setText("192.168.0.7");
+    ui->serverIp->setText("127.0.0.7");
     ui->peerVoiceIp->setText("127.0.0.1");
 }
 
@@ -175,7 +178,42 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
+    QIODevice *QID;
+    //QID->open( QIODevice::WriteOnly);
+    QBuffer myQB;
 
+   //QID(myQB);
+   //cb(128000,64000);
+   //dFile.setFileName("../RecordTest.raw");
+   microphoneBuffer->open( QIODevice::ReadWrite);
+   QAudioFormat format;
+   // Set up the desired format, for example:
+   format.setSampleRate(16000);
+   format.setChannelCount(1);
+   format.setSampleSize(16);
+   format.setCodec("audio/pcm");
+   format.setByteOrder(QAudioFormat::LittleEndian);
+   format.setSampleType(QAudioFormat::UnSignedInt);
+
+   QAudioDeviceInfo info = QAudioDeviceInfo::defaultInputDevice();
+   if (!info.isFormatSupported(format))
+   {
+       qWarning() << "Default format not supported, trying to use the nearest.";
+       format = info.nearestFormat(format);
+   }
+
+   audio = new QAudioInput(format, this);
+   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+
+   //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
+   isRecording = true;
+   audio->start(microphoneBuffer);
+
+   qDebug () << "Setting up peer to peer";
+   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
+   qDebug () << "Sending microphone data";
+   ClientSendMicrophoneData();
+   qDebug () << "Peer2Peer instantiated";
 }
 
 void MainWindow::on_recordBtn_clicked()
@@ -205,7 +243,7 @@ void MainWindow::on_recordBtn_clicked()
    }
 
    audio = new QAudioInput(format, this);
-   connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
