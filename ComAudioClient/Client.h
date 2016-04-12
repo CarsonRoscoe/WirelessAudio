@@ -17,7 +17,7 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter);
 void ClientCleanup(SOCKET s);
 // Receiving Prototypes
 int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event);
-int ClientListen(HANDLE hFile);
+int ClientListen();
 DWORD WINAPI ClientListenThread(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThread(LPVOID lpParameter);
 void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,

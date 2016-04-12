@@ -233,7 +233,10 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
         }
 
         if (dwBytesRead == 0) {
-            ClientCleanup();
+            CloseHandle(hFile);
+            closesocket(sendSock);
+            sendSockClosed = 1;
+            free(sendbuff);
             return TRUE;
         }
         else if (dwBytesRead > 0 && dwBytesRead < (DWORD)CLIENT_PACKET_SIZE)
@@ -256,7 +259,6 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
         qDebug() << "Total sent bytes:" << (totalbytessent += sentBytes);
 #endif
     }
-    free(sendbuff);
 	return TRUE;
 }
 
@@ -311,11 +313,6 @@ void ClientCleanup()
     {
         closesocket(p2pSendSock);
         p2pSendSockClosed = 1;
-    }
-    if (!controlSockClosed)
-    {
-        closesocket(controlSock);
-        controlSockClosed = 1;
     }
     if (!hSendClosed)
     {

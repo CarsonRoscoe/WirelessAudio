@@ -54,7 +54,9 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     int flag = (int)lpParameter;
-    int sentb = 0, recvb = 0, totalb = 0, i = 0;
+    int sentb = 0, recvb = 1, totalb = 0, i = 0;
+    wchar_t *path;
+
     switch (flag)
     {
     case GET_UPDATE_SONG_LIST:
@@ -64,12 +66,16 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         {
             recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
             songList[i] = new char[100];
-            strcpy(songList[i], recvbuff);
-            qDebug() << songList[i];
-            i++;
+            strcat(message, recvbuff);
             totalb += recvb;
             if (totalb >= SERVER_PACKET_SIZE)
-                break;
+            {
+                strcpy(songList[i], message);
+                qDebug() << songList[i];
+                i++;
+                totalb -= SERVER_PACKET_SIZE;
+                memset(message, 0, strlen(message));
+            }
         }
         break;
     case SEND_SONG_TO_SERVER:
@@ -92,7 +98,12 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         sendbuff[0] = flag;
         strcpy(recvFileName, "classical_chopin.wav");
         strcat(sendbuff, recvFileName);
+        mbtowc(path, recvFileName, 100);
+        DeleteFile(path);
+        hReceiveFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        hReceiveClosed = 1;
         sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        ClientListen();
         break;
     default:
         qDebug() << "Invalid request";
