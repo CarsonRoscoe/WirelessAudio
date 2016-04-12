@@ -33,14 +33,14 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     listeningBuffer->open(QIODevice::ReadWrite);
-    ClientReceiveSetupP2P();
-    ClientListenP2P();
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
-    ClientReceiveSetupP2P();
-    ClientListenP2P();
+    if (ClientReceiveSetupP2P() != -1)
+        ClientListenP2P();
+    else
+        qDebug() << "ClientReceiveSetupP2P Error'd";
 
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
