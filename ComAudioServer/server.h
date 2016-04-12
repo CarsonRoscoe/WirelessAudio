@@ -52,14 +52,15 @@ extern CircularBuffer* circularBufferRecv;
 extern char recvFileName[100];
 // Sending
 extern char address[100];
-extern SOCKET sendSock;
+extern SOCKET sendSock[MAX_CLIENTS];
 extern bool sendSockClosed;
 extern HANDLE hSendFile;
 extern bool hSendClosed;
 extern struct sockaddr_in server;
+extern char sendFileName[100];
 // Control Channel
 extern SOCKET controlSock, Clients[MAX_CLIENTS];
-extern bool controlSockOpen, clientOpen[MAX_CLIENTS];
+extern bool controlSockOpen, clientClosed[MAX_CLIENTS];
 extern struct sockaddr_in client;
 extern char **songList;
 extern int numClients, numSongs;
@@ -76,7 +77,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
     LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter);
 // Sending
-int ServerSendSetup(char* addr);
+int ServerSendSetup(char* addr, int clientID);
 int ServerSend(HANDLE hFile);
 DWORD WINAPI ServerSendThread(LPVOID lpParameter);
 // Control Channel

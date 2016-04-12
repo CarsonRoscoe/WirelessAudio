@@ -9,7 +9,7 @@
 
 ////////// "Real" of the externs in Server.h ///////////////
 SOCKET controlSock, Clients[MAX_CLIENTS];
-bool controlSockOpen, clientOpen[MAX_CLIENTS] = {false};
+bool controlSockOpen, clientClosed[MAX_CLIENTS] = {1};
 struct sockaddr_in client;
 char **songList = new char*[100];
 int numClients = 0, numSongs;
@@ -49,7 +49,7 @@ DWORD WINAPI ServerCreateControlChannels(LPVOID lpParameter)
         }
 
         qDebug() << "Control socket" << Clients[numClients] << "connected";
-        clientOpen[numClients] = true;
+        clientClosed[numClients] = 0;
 
         if ((hThread = CreateThread(NULL, 0, ServerListenControlChannel, (LPVOID)numClients, 0, &ThreadId)) == NULL)
         {
@@ -63,7 +63,7 @@ DWORD WINAPI ServerCreateControlChannels(LPVOID lpParameter)
 
 DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
 {
-    int sentb = 0, recvb = 1, totalb;
+    int sentb = 0, recvb = 1, totalb = 0;
     char *sendbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
@@ -75,6 +75,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
         {
             recvb = recv(Clients[clientID], recvbuff, SERVER_PACKET_SIZE, 0);
             strcat(message, recvbuff);
+            qDebug() << "received bytes:" << recvb;
             totalb += recvb;
             if (totalb >= SERVER_PACKET_SIZE)
             {
@@ -91,12 +92,19 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     message[strlen(message) - 1] = 0;
                     strcpy(recvFileName, "\.\\Library\\");
                     strcat(recvFileName, message);
+                    qDebug() << recvFileName;
                     listenSockClosed = ServerReceiveSetup(listenSock, SERVER_DEFAULT_PORT, false, acceptEvent);
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
                     sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
                     break;
                 case GET_SONG_FROM_SERVER:
+                    memmove(message, message+1, strlen(message) - 1);
+                    message[strlen(message) - 1] = 0;
+                    strcpy(sendFileName, "\.\\Library\\");
+                    strcat(sendFileName, message);
+                    qDebug() << sendFileName;
+                    sendSockClosed = ServerSendSetup();
                     break;
                 default:
                     break;

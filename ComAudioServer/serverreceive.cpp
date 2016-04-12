@@ -453,13 +453,14 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    LPWSTR path;
+    wchar_t *path = (wchar_t *)calloc(100, sizeof(wchar_t));
     mbstowcs(path, recvFileName, 100);
 
     CreateDirectory(TEXT("Library"), NULL);
     DeleteFile(path);
     HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
+    free(path);
 
     while(!lastPacket)
     {
@@ -528,6 +529,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
         }
     }
     CloseHandle(hFile);
+
     return TRUE;
 }
 
@@ -553,11 +555,11 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 ---------------------------------------------------------------------------------------*/
 void ServerCleanup()
 {
-    if (!sendSockClosed)
+    /*if (!sendSockClosed)
     {
         closesocket(sendSock);
         sendSockClosed = 1;
-    }
+    }*/
     if (!acceptSockClosed)
     {
         closesocket(acceptSock);
