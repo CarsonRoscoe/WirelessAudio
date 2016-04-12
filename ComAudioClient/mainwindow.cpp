@@ -15,8 +15,8 @@ QFile dFile;
 QAudioInput * audio;
 QPalette palette;
 
-QAudioInput * audioFile;
-CircularBuffer * cb, *circularBufferRecv, *micBuf;
+//QAudioInput * audioFile;
+CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
 bool isPlaying;
@@ -198,7 +198,7 @@ void MainWindow::on_connectServerBtn_clicked()
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
    // byteArray=microphoneBuffer->buffer();
-    dFile.setFileName("../RecordTest.raw");
+    //dFile.setFileName("../RecordTest.raw");
     dFile.open( QIODevice::ReadWrite);
 
    microphoneBuffer->buffer().reserve(10000000);
@@ -219,16 +219,16 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   audioFile = new QAudioInput(format, this);
+   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-   //audio->setBufferSize(20000000);
+   //audio->setBufferSize(SERVER_PACKET_SIZE * BUFFERSIZE);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
-   audioFile->start(&dFile);
+   //audioFile->start(&dFile);
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
@@ -257,7 +257,7 @@ void MainWindow::on_recordBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   audioFile = new QAudioInput(format, this);
+   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
     audio->setNotifyInterval(1);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
@@ -265,9 +265,9 @@ void MainWindow::on_recordBtn_clicked()
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
+  // if(packetcounter>10)
 
-
-   audioFile->start(&dFile);
+   //audioFile->start(&dFile);
 
 }
 
@@ -276,12 +276,17 @@ void MainWindow::on_stopRecordBtn_clicked()
     isRecording = false;
     qDebug()<<"StopRecordTriggered";
     audio->stop();
-    audioFile->stop();
+    //audioFile->stop();
     audioManager->playRecord();
     //dFile.close();
     //delete audio;
 }
 
+void MainWindow::cleanupp2p()
+{
+
+        qDebug()<<"cleanup";
+}
 /*void MainWindow::StoreToBuffer(){
     char tempbuff[CLIENT_PACKET_SIZE];
     //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);

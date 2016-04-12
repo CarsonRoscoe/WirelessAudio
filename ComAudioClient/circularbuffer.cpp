@@ -1,6 +1,7 @@
 #include "circularbuffer.h"
 #include <QDebug>
-
+#include <QTimer>
+int packetcounter =0;
 CircularBuffer::CircularBuffer(int maxLength, int elementLength, QObject* par) : parent(par) {
     buffer = malloc(maxLength* elementLength);
     if (buffer == NULL) {
@@ -44,9 +45,11 @@ bool CircularBuffer::pop(QBuffer* buf) {
         qDebug() << "Errorrr";
         return false;
     }
+    packetcounter++;
 
     buf->seek(curPos);
     qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
+    qDebug()<<"Packets Sent:"<< packetcounter;
 
     back = (char*)back + elementLength;
     if (back == bufferEnd) {

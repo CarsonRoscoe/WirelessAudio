@@ -236,7 +236,7 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
         if (!micBuf->pop(sendbuff)) {
            continue;
         }
-        file.write(sendbuff, CLIENT_PACKET_SIZE);
+        //file.write(sendbuff, CLIENT_PACKET_SIZE);
         /*if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
         {
             //stream<<sendbuff;

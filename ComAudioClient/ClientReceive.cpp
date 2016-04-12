@@ -439,6 +439,7 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
 
     Flags = 0;
     // TCP WSA receive
+
     if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, &(SocketInfo->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
@@ -536,7 +537,7 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
-    p2pSI = (LPSOCKET_INFORMATION)Overlapped;
+    LPSOCKET_INFORMATION p2pSI = (LPSOCKET_INFORMATION)Overlapped;
 
     if (Error != 0)
         qDebug() << "I/O operation failed with error " << Error;
@@ -551,24 +552,30 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
         return;
     }
 
-    if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
-        qDebug() << "Writing received packet to circular buffer failed";
-
-    Flags = 0;
-    ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
-
+      if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
+          qDebug() << "error pushing back CR " << p2pSI->Socket;
+        Flags = 0;
+   /* ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
     p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
-    p2pSI->DataBuf.buf = p2pSI->Buffer;
+    p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
     //SleepEx(10, true);
-    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
-        if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
-            qDebug() << "WSARecv() failed with error " << LastErr;
-            return;
-        } else {
-            SleepEx(1000, true);
-        }
-    }
+if(packetcounter==146){
+     closesocket(p2pSI->Socket);
+     qDebug()<<"Socket Closed";
+ //closesocket(p2pSI->Socket);
+   // p2pSI->DataBuf.len=100000;
+   // p2pSI->DataBuf.buf= p2pSI->Buffer;
+}
+        if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+            if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
+                qDebug() << "WSARecv() failed with error " << LastErr;
+                return;
+            } else {
+                SleepEx(1000, true);
+            }
+       }
+
 
 }
 

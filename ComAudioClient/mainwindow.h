@@ -55,7 +55,7 @@ private slots:
 
     void on_closeInBtn_clicked();
 
-    void StoreToBuffer();
+    void cleanupp2p();
 private:
     Ui::MainWindow *ui;
     AudioManager *audioManager;
