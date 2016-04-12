@@ -48,8 +48,12 @@ bool CircularBuffer::pop(QBuffer* buf) {
     packetcounter++;
 
     buf->seek(curPos);
+
     qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
     qDebug()<<"Packets Sent:"<< packetcounter;
+
+    //qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
+
 
     back = (char*)back + elementLength;
     if (back == bufferEnd) {

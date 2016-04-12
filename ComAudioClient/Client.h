@@ -4,10 +4,12 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "circularbuffer.h"
+#include "audiomanager.h"
 #include <QBuffer>
 #include <iostream>
 #include <fstream>
 #include <QAudioInput>
+
 ///////////////////// Global Prototypes ///////////////////
 // Sending Prototypes
 void ShowLastErr(bool wsa);
@@ -70,6 +72,8 @@ extern HANDLE hReceiveFile;
 extern bool hReceiveOpen;
 extern LPSOCKET_INFORMATION SI, p2pSI;
 extern CircularBuffer* circularBufferRecv;
+
 extern QAudioInput * audio;
 extern int packetcounter;
+
 #endif

@@ -22,6 +22,7 @@ bool isRecording;
 bool isPlaying;
 QByteArray byteArray;
 int curpos=0;
+AudioManager *audioManager;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -205,7 +206,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
-   format.setSampleRate(16000);
+   format.setSampleRate(8000);
    format.setChannelCount(1);
    format.setSampleSize(16);
    format.setCodec("audio/pcm");
@@ -243,7 +244,7 @@ void MainWindow::on_recordBtn_clicked()
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
-   format.setSampleRate(16000);
+   format.setSampleRate(8000);
    format.setChannelCount(1);
    format.setSampleSize(16);
    format.setCodec("audio/pcm");

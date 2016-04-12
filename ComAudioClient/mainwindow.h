@@ -8,6 +8,7 @@
 #include "audiomanager.h"
 #include "populatemicrophoneworker.h"
 
+
 namespace Ui {
 class MainWindow;
 }
@@ -58,7 +59,6 @@ private slots:
     void cleanupp2p();
 private:
     Ui::MainWindow *ui;
-    AudioManager *audioManager;
     PopulateMicrophoneWorker *microphoneWorker;
     QThread microphoneThread;
 };
