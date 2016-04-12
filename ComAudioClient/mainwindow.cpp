@@ -20,7 +20,7 @@ CircularBuffer * cb, *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
 bool isPlaying;
-  QByteArray byteArray;
+QByteArray byteArray;
 int curpos=0;
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -57,6 +57,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("127.0.0.7");
     ui->peerVoiceIp->setText("192.168.0.7");
+
+    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
+    microphoneWorker->moveToThread(&microphoneThread);
+    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
+    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
+    microphoneThread.start();
 }
 
 MainWindow::~MainWindow()
@@ -191,10 +197,11 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
-    //byteArray=microphoneBuffer->buffer();
+   // byteArray=microphoneBuffer->buffer();
     dFile.setFileName("../RecordTest.raw");
     dFile.open( QIODevice::ReadWrite);
 
+   microphoneBuffer->buffer().reserve(10000000);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -214,11 +221,12 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
 
    audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
+   //audio->setBufferSize(20000000);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
-   connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
+   //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
    audioFile->start(&dFile);
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
@@ -229,7 +237,7 @@ void MainWindow::on_recordBtn_clicked()
 {
 
 
-  //  byteArray=microphoneBuffer->buffer();
+   //byteArray=microphoneBuffer->buffer();
    dFile.setFileName("../RecordTest.raw");
    dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
@@ -274,7 +282,7 @@ void MainWindow::on_stopRecordBtn_clicked()
     //delete audio;
 }
 
-void MainWindow::StoreToBuffer(){
+/*void MainWindow::StoreToBuffer(){
     char tempbuff[CLIENT_PACKET_SIZE];
     //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
 
@@ -290,4 +298,4 @@ void MainWindow::StoreToBuffer(){
             qDebug()<<"Pushback FAILED";
         }
     }
-}
+}*/
