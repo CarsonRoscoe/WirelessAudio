@@ -61,6 +61,7 @@ extern struct sockaddr_in server, otherClient;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
+extern CircularBuffer * micBuf;
 // Receiving
 extern SOCKET listenSock, acceptSock;
 extern bool listenSockOpen, acceptSockOpen;

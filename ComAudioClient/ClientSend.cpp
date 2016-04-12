@@ -32,7 +32,8 @@
 #include <stdio.h>
 #include <QDebug>
 #include "Client.h"
-
+#include <QFile>
+#include <QTextStream>
 //#pragma comment(lib, "Ws2_32.lib")
 
 ////////// "Real" of the externs in Client.h ///////////////
@@ -47,7 +48,7 @@ HANDLE hSendFile;
 bool hSendOpen;
 
 //////////////////// Debug vars ///////////////////////////
-#define DEBUG_MODE
+//#define DEBUG_MODE
 int totalbytessent;
 
 /*---------------------------------------------------------------------------------------
@@ -222,33 +223,37 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
     DWORD  dwBytesRead;
     int sentBytes = 0;
+    memset(sendbuff,'\0',sizeof(sendbuff));
 
+    QString filename = "RecordBufferdata.txt";
+    QFile file(filename);
+    if(!file.open(QIODevice::WriteOnly)){
+        qDebug()<< "Error, File didn't open";
+    }
+
+    QTextStream stream(&file);
     while (isRecording) {
-        microphoneBuffer->seek(0);
-        dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE);
-
+        micBuf->pushBack(sendbuff);
+        //dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE -5);
+        stream<<sendbuff;
         if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
         {
+            stream<<sendbuff;
             sendbuff[dwBytesRead] = 'm';
             sendbuff[dwBytesRead+1] = 'i';
             sendbuff[dwBytesRead+2] = 'l';
             sendbuff[dwBytesRead+3] = 'e';
             sendbuff[dwBytesRead+4] = 'd';
-
+             qDebug() << "Reading stuff";
         }
-        if (microphoneBuffer->size() > 0)
-        {
-            microphoneBuffer->seek(microphoneBuffer->size()-1);
-        }
-
-        sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-#ifdef DEBUG_MODE
-        qDebug() << "\nRecorded bytes:" << dwBytesRead;
-        qDebug() << "Sent bytes:" << sentBytes;
-#endif
+        //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+//#ifdef DEBUG_MODE
+       // qDebug() << "\nRecorded bytes:" << dwBytesRead;
+        //qDebug() << "Sent bytes:" << sentBytes;
+//#endif
     }
 
-    sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+    //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
 
     return TRUE;
 }

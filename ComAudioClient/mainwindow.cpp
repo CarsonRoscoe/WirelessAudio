@@ -4,17 +4,24 @@
 
 #include <QDebug>
 #include <QAudioInput>
+#include <QAudioOutput>
 #include <QIODevice>
 #include <QTimer>
 #include <io.h>
+#include <QPalette>
+#include <QDataStream>
 
 QFile dFile;
 QAudioInput * audio;
+QPalette palette;
+
 QAudioInput * audioFile;
-CircularBuffer * cb, *circularBufferRecv;
+CircularBuffer * cb, *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
 bool isPlaying;
+  QByteArray byteArray;
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -27,9 +34,10 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
-    ClientReceiveSetupP2P();
-    ClientListenP2P();
+   // ClientReceiveSetupP2P();
+    //ClientListenP2P();
 
+    micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
@@ -180,6 +188,10 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
+    byteArray=microphoneBuffer->buffer();
+    dFile.setFileName("../RecordTest.raw");
+    dFile.open( QIODevice::ReadWrite);
+
    microphoneBuffer->open( QIODevice::ReadWrite);
    listeningBuffer->open(QIODevice::ReadWrite);
    QAudioFormat format;
@@ -198,25 +210,24 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
        format = info.nearestFormat(format);
    }
 
+   audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
 
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
+   connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
-
-   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
+   audioFile->start(&dFile);
+   //ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
 
 void MainWindow::on_recordBtn_clicked()
 {
-    QIODevice *QID;
-    //QID->open( QIODevice::WriteOnly);
-    QBuffer myQB;
 
-   //QID(myQB);
-  //cb(128000,64000);
+
+    byteArray=microphoneBuffer->buffer();
    dFile.setFileName("../RecordTest.raw");
    dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
@@ -238,12 +249,14 @@ void MainWindow::on_recordBtn_clicked()
 
    audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-
+    audio->setNotifyInterval(200);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-
+   connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
+
+
    audioFile->start(&dFile);
 
 }
@@ -259,3 +272,13 @@ void MainWindow::on_stopRecordBtn_clicked()
     //delete audio;
 }
 
+void MainWindow::StoreToBuffer(){
+
+char *tempbuff = (char *)calloc(CLIENT_PACKET_SIZE, sizeof(char));
+ microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
+
+qDebug()<<"Push back to buffer here";
+    if(!micBuf->pushBack(tempbuff)){
+        qDebug()<<"Pushback FAILED";
+    }
+}

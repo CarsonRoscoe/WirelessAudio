@@ -602,44 +602,13 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
             for (int a = 0, b = 1, c = 2, d = 3, e = 4;
                  a < packetSize - 5; a++, b++, c++, d++, e++)
             {
-                if (writeBuf[a] == 'm') {
-                    if (writeBuf[b] == 'i') {
-                        if (writeBuf[c] == 'l') {
-                            if (writeBuf[d] == 'e') {
-                                if (writeBuf[e] == 'd') {
+                if (writeBuf[a] == 'm' && writeBuf[a+1] == 'i' && writeBuf[a+2]=='l' && writeBuf[a+3]=='e' && writeBuf[a+4]=='d') {
                                     packetSize = a - 1;
 #ifdef DEBUG_MODE
                                     qDebug() << "Last packet";
 #endif
-                                    break;
-                                } else {
-                                    a += 4;
-                                    b += 4;
-                                    c += 4;
-                                    d += 4;
-                                    e += 4;
-                                }
-                            } else {
-                                a += 3;
-                                b += 3;
-                                c += 3;
-                                d += 3;
-                                e += 3;
-                            }
-                        } else {
-                            a += 2;
-                            b += 2;
-                            c += 2;
-                            d += 2;
-                            e += 2;
-                        }
-                    } else {
-                        a++;
-                        b++;
-                        c++;
-                        d++;
-                        e++;
-                    }
+                                   break;
+
                 }
             }
 
