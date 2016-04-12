@@ -54,16 +54,16 @@ extern char recvFileName[100];
 extern char address[100];
 extern SOCKET sendSock[MAX_CLIENTS];
 extern bool sendSockClosed;
-extern HANDLE hSendFile;
-extern bool hSendClosed;
+extern HANDLE hFile;
+extern bool hClosed;
 extern struct sockaddr_in server;
 extern char sendFileName[100];
 // Control Channel
 extern SOCKET controlSock, Clients[MAX_CLIENTS];
 extern bool controlSockOpen, clientClosed[MAX_CLIENTS];
 extern struct sockaddr_in client;
-extern char **songList;
-extern int numClients, numSongs;
+extern char **ipClients, **songList;
+extern int numSongs;
 
 ///////////////////// Global Prototypes ///////////////////
 // Receiving
@@ -78,7 +78,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter);
 // Sending
 int ServerSendSetup(char* addr, int clientID);
-int ServerSend(HANDLE hFile);
+int ServerSend(int clientID);
 DWORD WINAPI ServerSendThread(LPVOID lpParameter);
 // Control Channel
 void GetSongList();

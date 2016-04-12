@@ -32,8 +32,8 @@ char address[100];
 SOCKET sendSock[MAX_CLIENTS];
 bool sendSockClosed = 1;
 struct sockaddr_in server;
-HANDLE hSendFile;
-bool hSendClosed = 1;
+HANDLE hFile;
+bool hClosed = 1;
 char sendFileName[100];
 
 /*---------------------------------------------------------------------------------------
@@ -131,7 +131,6 @@ int ServerSend(int clientID)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hSendClosed = 0;
 
     if ((hThread = CreateThread(NULL, 0, ServerSendThread, (LPVOID)clientID, 0, &ThreadId)) == NULL)
     {
@@ -171,8 +170,9 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
     char *sendbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     DWORD  dwBytesRead;
     int sentBytes = 0;
+
     while (true) {
-        if (ReadFile(hReceivedFile, sendbuff, SERVER_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
+        if (ReadFile(hFile, sendbuff, SERVER_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
         {
             ShowLastErr(false);
             qDebug() << "Couldn't read file";
@@ -181,7 +181,9 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
         }
 
         if (dwBytesRead == 0) {
-            ServerCleanup();
+            closesocket(sendSock[clientID]);
+            CloseHandle(hFile);
+            hClosed = 1;
             return TRUE;
         }
         // if less than SERVER_PACKET_SIZE was read, then end-of-file must have been encountered
@@ -195,7 +197,7 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
         }
 
         // TCP Send
-        sentBytes = send(sendSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        sentBytes = send(sendSock[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
     }
     free(sendbuff);
     return TRUE;

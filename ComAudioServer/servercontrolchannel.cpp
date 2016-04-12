@@ -11,8 +11,9 @@
 SOCKET controlSock, Clients[MAX_CLIENTS];
 bool controlSockOpen, clientClosed[MAX_CLIENTS] = {1};
 struct sockaddr_in client;
+char **ipClients = new char*[MAX_CLIENTS];
 char **songList = new char*[100];
-int numClients = 0, numSongs;
+int numSongs;
 
 void GetSongList()
 {
@@ -35,29 +36,39 @@ void GetSongList()
 
 DWORD WINAPI ServerCreateControlChannels(LPVOID lpParameter)
 {
-    int	client_len;
+    int	client_len, clientSlot;
     HANDLE hThread;
     DWORD ThreadId;
 
     while(true)
     {
+        for (int i = 0; i < MAX_CLIENTS; i++)
+        {
+            if (clientClosed[i] == 1)
+            {
+                clientSlot = i;
+                break;
+            }
+        }
         client_len = sizeof(client);
-        if ((Clients[numClients] = accept(controlSock, (struct sockaddr *)&client, &client_len)) == -1)
+        if ((Clients[clientSlot] = accept(controlSock, (struct sockaddr *)&client, &client_len)) == -1)
         {
             qDebug() << "Can't accept client\n";
             return FALSE;
         }
 
-        qDebug() << "Control socket" << Clients[numClients] << "connected";
-        clientClosed[numClients] = 0;
+        ipClients[clientSlot] = new char[100];
+        strcpy(ipClients[clientSlot], inet_ntoa(client.sin_addr));
+        qDebug() << "IP of new client:" << ipClients[clientSlot];
+        qDebug() << "Control socket" << Clients[clientSlot] << "connected";
+        clientClosed[clientSlot] = 0;
 
-        if ((hThread = CreateThread(NULL, 0, ServerListenControlChannel, (LPVOID)numClients, 0, &ThreadId)) == NULL)
+        if ((hThread = CreateThread(NULL, 0, ServerListenControlChannel, (LPVOID)clientSlot, 0, &ThreadId)) == NULL)
         {
             sprintf_s(errMsg, "Create ServerListenControlChannel failed with error %lu\n", GetLastError());
             qDebug() << errMsg;
             return -1;
         }
-        numClients++;
     }
 }
 
@@ -68,6 +79,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
     char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     int clientID = (int)lpParameter;
+    wchar_t *path;
 
     while(true)
     {
@@ -97,6 +109,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
                     sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
+                    ShowLastErr(true);
                     break;
                 case GET_SONG_FROM_SERVER:
                     memmove(message, message+1, strlen(message) - 1);
@@ -104,7 +117,11 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     strcpy(sendFileName, "\.\\Library\\");
                     strcat(sendFileName, message);
                     qDebug() << sendFileName;
-                    sendSockClosed = ServerSendSetup();
+                    mbtowc(path, sendFileName, 100);
+                    hFile = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                    hClosed = 0;
+                    sendSockClosed = ServerSendSetup(ipClients[clientID], clientID);
+                    ServerSend(clientID);
                     break;
                 default:
                     break;

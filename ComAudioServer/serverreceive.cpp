@@ -132,7 +132,7 @@ int ServerReceiveSetup(SOCKET &sock, int port, bool noEvent, WSAEVENT &event)
     } else {
         HANDLE hThread;
         DWORD ThreadId;
-        if ((hThread = CreateThread(NULL, 0, ServerCreateControlChannels, (LPVOID)numClients, 0, &ThreadId)) == NULL)
+        if ((hThread = CreateThread(NULL, 0, ServerCreateControlChannels, 0, 0, &ThreadId)) == NULL)
         {
             sprintf_s(errMsg, "Create ServerCreateControlChannels failed with error %lu\n", GetLastError());
             qDebug() << errMsg;
@@ -168,9 +168,8 @@ int ServerListen()
 {
     HANDLE hThread;
     DWORD ThreadId;
-    LPVOID nothing;
 
-    if ((hThread = CreateThread(NULL, 0, ServerListenThread, nothing, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ServerListenThread, 0, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerListenThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
@@ -383,7 +382,11 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0)
     {
-        ServerCleanup();
+        closesocket(SI->Socket);
+        closesocket(listenSock);
+        closesocket(acceptSock);
+        listenSockClosed = 1;
+        acceptSockClosed = 1;
         GlobalFree(SI);
         return;
     }
@@ -529,7 +532,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
         }
     }
     CloseHandle(hFile);
-
+    hClosed = 1;
     return TRUE;
 }
 
@@ -555,11 +558,11 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 ---------------------------------------------------------------------------------------*/
 void ServerCleanup()
 {
-    /*if (!sendSockClosed)
+    if (!sendSockClosed)
     {
         closesocket(sendSock);
         sendSockClosed = 1;
-    }*/
+    }
     if (!acceptSockClosed)
     {
         closesocket(acceptSock);
@@ -569,16 +572,6 @@ void ServerCleanup()
     {
         closesocket(listenSock);
         listenSockClosed = 1;
-    }
-    if (!controlSockOpen)
-    {
-        closesocket(controlSock);
-        controlSockOpen = 1;
-    }
-    if (!hSendClosed)
-    {
-        CloseHandle(hSendFile);
-        hSendClosed = 1;
     }
     WSACleanup();
 }
