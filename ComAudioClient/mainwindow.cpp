@@ -115,6 +115,7 @@ void MainWindow::on_connectServerBtn_clicked()
     if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
             controlSock, CONTROL_PORT)) == 0)
     {
+        strcpy(address, ui->serverIp->text().toLatin1().data());
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
         ui->disconnectServerBtn->setEnabled(true);
@@ -146,10 +147,11 @@ void MainWindow::on_sendFileBtn_clicked()
     if (file->exists())
     {
         file->open(QIODevice::ReadOnly);
+        hSendFile = (HANDLE)_get_osfhandle(file->handle());
+        QFileInfo fileInfo(file->fileName());
+        strcpy(sendFileName, fileInfo.fileName().toLatin1().data());
+        ClientSendRequest(SEND_SONG_TO_SERVER);
     }
-    QFileInfo fileInfo(file->fileName());
-    strcpy(sendFileName, fileInfo.fileName().toLatin1().data());
-    ClientSendRequest(SEND_SONG_TO_SERVER);
 }
 
 void MainWindow::on_dwldFileBtn_clicked()

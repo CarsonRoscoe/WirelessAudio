@@ -54,38 +54,56 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     int flag = (int)lpParameter;
-    int sentBytes = 0, err = 1, i = 0;
+    int sentb = 0, recvb = 1, totalb = 0, i = 0;
+    wchar_t *path;
+
     switch (flag)
     {
     case GET_UPDATE_SONG_LIST:
         sendbuff[0] = flag;
-        sentBytes = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
-        while(err != 0 && err != SOCKET_ERROR)
+        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        while(recvb != 0 && recvb != SOCKET_ERROR)
         {
-            err = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
+            recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
             songList[i] = new char[100];
-            strcpy(songList[i], recvbuff);
-            qDebug() << songList[i];
-            i++;
+            strcat(message, recvbuff);
+            totalb += recvb;
+            if (totalb >= SERVER_PACKET_SIZE)
+            {
+                strcpy(songList[i], message);
+                qDebug() << songList[i];
+                i++;
+                totalb -= SERVER_PACKET_SIZE;
+                memset(message, 0, strlen(message));
+            }
         }
         break;
     case SEND_SONG_TO_SERVER:
         sendbuff[0] = flag;
         strcat(sendbuff, sendFileName);
-        sentBytes = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
-        while(err != 0 && err != SOCKET_ERROR)
+        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        while(totalb < SERVER_PACKET_SIZE && recvb != SOCKET_ERROR)
         {
-            err = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
+            recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
+            qDebug() << "received bytes:" << recvb;
+            totalb += recvb;
         }
         if (recvbuff[0] == 0)
         {
-
+            sendSockClosed = ClientSendSetup(address, sendSock, SERVER_DEFAULT_PORT);
+            ClientSend(hSendFile);
         }
         break;
     case GET_SONG_FROM_SERVER:
         sendbuff[0] = flag;
+        strcpy(recvFileName, "classical_chopin.wav");
         strcat(sendbuff, recvFileName);
-        sentBytes = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        mbtowc(path, recvFileName, 100);
+        DeleteFile(path);
+        hReceiveFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        hReceiveClosed = 1;
+        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        ClientListen();
         break;
     default:
         qDebug() << "Invalid request";

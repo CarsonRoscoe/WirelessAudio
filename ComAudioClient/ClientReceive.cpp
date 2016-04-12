@@ -137,13 +137,13 @@ int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event)
 --      This is the qt-friendly (non-threaded) function called by the GUI to start the
 --      listening for and receiving of file transfer data through threaded function calls.
 ---------------------------------------------------------------------------------------*/
-int ClientListen(HANDLE hFile)
+int ClientListen()
 {
     HANDLE hThread;
     DWORD ThreadId;
     hReceiveClosed = 0;
 
-    if ((hThread = CreateThread(NULL, 0, ClientListenThread, (LPVOID) hFile, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ClientListenThread, 0, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerListenThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
@@ -457,7 +457,11 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0)
     {
-        ClientCleanup();
+        closesocket(SI->Socket);
+        closesocket(listenSock);
+        closesocket(acceptSock);
+        listenSockClosed = 1;
+        acceptSockClosed = 1;
         GlobalFree(SI);
         return;
     }
@@ -588,7 +592,6 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
     char delim[6] = {(int)'d', (int)'e', (int)'l', (int)'i', (int)'m', '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
-    hReceiveFile = (HANDLE) lpParameter;
 
     while(!lastPacket)
     {
@@ -611,5 +614,7 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
             }
         }
     }
+    CloseHandle(hReceiveFile);
+    hReceiveClosed = 1;
     return TRUE;
 }
