@@ -37,11 +37,11 @@
 
 ////////// "Real" of the externs in Server.h ///////////////
 SOCKET listenSock, acceptSock;
-bool listenSockOpen, acceptSockOpen;
-WSAEVENT acceptEvent;
+bool listenSockClosed = 1, acceptSockClosed = 1;
+WSAEVENT acceptEvent, defaultEvent = INVALID_HANDLE_VALUE;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
-int receivedSongNum = 0;
+char recvFileName[100];
 
 ////////////////// Debug vars ///////////////////////////////
 #define DEBUG_MODE
@@ -67,7 +67,7 @@ int totalbytesreceived, totalbyteswritten;
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ServerReceiveSetup(SOCKET sock, int port, WSAEVENT event)
+int ServerReceiveSetup(SOCKET &sock, int port, bool noEvent, WSAEVENT &event)
 {
     int ret;
     WSADATA wsaData;
@@ -81,7 +81,7 @@ int ServerReceiveSetup(SOCKET sock, int port, WSAEVENT event)
         return -1;
     }
 
-    if (event != NULL)
+    if (!noEvent)
     {
         // TCP create WSA socket
         if ((sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
@@ -121,11 +121,20 @@ int ServerReceiveSetup(SOCKET sock, int port, WSAEVENT event)
         return -1;
     }
 
-    if (event != NULL)
+    if (!noEvent)
     {
         if ((event = WSACreateEvent()) == WSA_INVALID_EVENT)
         {
             sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
+    } else {
+        HANDLE hThread;
+        DWORD ThreadId;
+        if ((hThread = CreateThread(NULL, 0, ServerCreateControlChannels, (LPVOID)numClients, 0, &ThreadId)) == NULL)
+        {
+            sprintf_s(errMsg, "Create ServerCreateControlChannels failed with error %lu\n", GetLastError());
             qDebug() << errMsg;
             return -1;
         }
@@ -264,8 +273,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
 
             if (Index == WSA_WAIT_FAILED)
             {
-                sprintf_s(errMsg, "WSAWaitForMultipleEvents failed with error %d\n", WSAGetLastError());
-                qDebug() << errMsg;
+                ShowLastErr(true);
                 return FALSE;
             }
 
@@ -298,7 +306,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
         SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
-        acceptSockOpen = true;
+        acceptSockClosed = true;
         qDebug() << errMsg;
 
         Flags = 0;
@@ -445,18 +453,13 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    std::wstring filename;
-    std::wstring num = std::to_wstring(receivedSongNum);
-    filename += TEXT("\.\\Library\\receivedsong");
-    filename += num;
-    filename += TEXT(".wav");
+    LPWSTR path;
+    mbstowcs(path, recvFileName, 100);
 
     CreateDirectory(TEXT("Library"), NULL);
-    ShowLastErr(false);
-    DeleteFile(filename.c_str());
-    HANDLE hFile = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW,
+    DeleteFile(path);
+    HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
-    ShowLastErr(false);
 
     while(!lastPacket)
     {
@@ -477,7 +480,6 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                                 if (writeBuf[e] == 'm') {
                                     lastPacket = true;
                                     packetSize = a;
-                                    receivedSongNum++;
 #ifdef DEBUG_MODE
                                     qDebug() << "Last packet";
 #endif
@@ -551,25 +553,30 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 ---------------------------------------------------------------------------------------*/
 void ServerCleanup()
 {
-    if (sendSockOpen)
+    if (!sendSockClosed)
     {
         closesocket(sendSock);
-        sendSockOpen = false;
+        sendSockClosed = 1;
     }
-    if (acceptSockOpen)
+    if (!acceptSockClosed)
     {
         closesocket(acceptSock);
-        acceptSockOpen = false;
+        acceptSockClosed = 1;
     }
-    if (listenSockOpen)
+    if (!listenSockClosed)
     {
         closesocket(listenSock);
-        listenSockOpen = false;
+        listenSockClosed = 1;
     }
-    if (hSendOpen)
+    if (!controlSockOpen)
+    {
+        closesocket(controlSock);
+        controlSockOpen = 1;
+    }
+    if (!hSendClosed)
     {
         CloseHandle(hSendFile);
-        hSendOpen = false;
+        hSendClosed = 1;
     }
     WSACleanup();
 }

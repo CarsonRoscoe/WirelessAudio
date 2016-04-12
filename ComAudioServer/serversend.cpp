@@ -30,10 +30,10 @@
 ////////// "Real" of the externs in Client.h ///////////////
 char address[100];
 SOCKET sendSock;
-bool sendSockOpen;
+bool sendSockClosed = 1;
 struct sockaddr_in server;
 HANDLE hSendFile;
-bool hSendOpen;
+bool hSendClosed = 1;
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ServerSendSetup
@@ -101,8 +101,6 @@ int ServerSendSetup(char* addr)
         return -1;
     }
 
-    sendSockOpen = true;
-
     qDebug() << "Setup success";
     return 0;
 }
@@ -132,7 +130,7 @@ int ServerSend(HANDLE hFile)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hSendOpen = true;
+    hSendClosed = 0;
 
     if ((hThread = CreateThread(NULL, 0, ServerSendThread, (LPVOID)hFile, 0, &ThreadId)) == NULL)
     {
