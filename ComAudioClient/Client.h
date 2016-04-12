@@ -63,6 +63,8 @@ typedef struct _SOCKET_INFORMATION {
 extern char address[100];
 extern SOCKET sendSock;
 extern bool sendSockClosed;
+extern HANDLE hSendFile;
+extern bool hSendClosed;
 extern struct sockaddr_in server;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;

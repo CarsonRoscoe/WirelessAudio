@@ -39,12 +39,10 @@
 char address[100], p2pAddress[100];
 SOCKET sendSock, p2pSendSock;
 bool sendSockClosed = 1, p2pSendSockClosed = 1;
-struct sockaddr_in server, otherClient;
-char errMsg[ERRORSIZE];
-
-/////////////////// Globals ////////////////////////////////
 HANDLE hSendFile;
 bool hSendClosed = 1;
+struct sockaddr_in server, otherClient;
+char errMsg[ERRORSIZE];
 
 //////////////////// Debug vars ///////////////////////////
 #define DEBUG_MODE
@@ -221,12 +219,12 @@ int ClientSendMicrophoneData() {
 --      end on the server's side.
 ---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
-    hSendFile = (HANDLE) lpParameter;
+    HANDLE hFile = (HANDLE)lpParameter;
     char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
 	DWORD  dwBytesRead;
     int sentBytes = 0;
 	while (true) {
-        if (ReadFile(hSendFile, sendbuff, CLIENT_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
+        if (ReadFile(hFile, sendbuff, CLIENT_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
 		{
             ShowLastErr(false);
             qDebug() << "Couldn't read file";
