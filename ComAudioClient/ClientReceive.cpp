@@ -42,50 +42,6 @@ HANDLE hReceiveFile;
 bool hReceiveOpen;
 LPSOCKET_INFORMATION SI, p2pSI;
 
-//Carson, designed by Micah
-int ClientReceiveSetupP2P() {
-    int ret;
-    WSADATA wsaData;
-    SOCKADDR_IN InternetAddr;
-
-    if ((ret = WSAStartup(0x0202, &wsaData)) != 0) {
-        qDebug() << "WSAStartup failed with error " << ret;
-        WSACleanup();
-        return -1;
-    }
-
-    // TCP create WSA socket
-    if ((p2pListenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
-        qDebug() << "Failed to get a socket " << WSAGetLastError();
-        return -1;
-    }
-
-    InternetAddr.sin_family = AF_INET;
-    InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
-
-    if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
-        qDebug() << "bind()) failed with error " << WSAGetLastError();
-        return -1;
-    }
-
-    // TCP listen on socket
-    if (listen(p2pListenSock, 5)) {
-        qDebug() << "listen() failed with error " << WSAGetLastError();
-        return -1;
-    }
-
-    p2pListenSockOpen = true;
-
-    if ((p2pAcceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
-        qDebug() << "WSACreateEvent() failed with error " << WSAGetLastError();
-        return -1;
-    }
-
-    qDebug() << "P2P Listening Setup Success";
-    return 0;
-}
-
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientReceiveSetup
 --
@@ -105,7 +61,7 @@ int ClientReceiveSetupP2P() {
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ClientReceiveSetup()
+int ClientReceiveSetup(SOCKET sock, int port, WSAEVENT event)
 {
     int ret;
     WSADATA wsaData;
@@ -120,7 +76,7 @@ int ClientReceiveSetup()
     }
 
     // TCP create WSA socket
-    if ((listenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
+    if ((sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
         WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
     {
         sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
@@ -131,9 +87,9 @@ int ClientReceiveSetup()
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(CLIENT_DEFAULT_PORT);
+    InternetAddr.sin_port = htons(port);
 
-    if (bind(listenSock, (PSOCKADDR)&InternetAddr,
+    if (bind(sock, (PSOCKADDR)&InternetAddr,
         sizeof(InternetAddr)) == SOCKET_ERROR)
     {
         sprintf_s(errMsg, "bind() failed with error %d\n", WSAGetLastError());
@@ -141,15 +97,14 @@ int ClientReceiveSetup()
         return -1;
     }
     // TCP listen on socket (no corresponding UDP call)
-    if (listen(listenSock, 5))
+    if (listen(sock, 5))
     {
         sprintf_s(errMsg, "listen() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;
         return -1;
     }
-    listenSockOpen = true;
 
-    if ((acceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT)
+    if ((event = WSACreateEvent()) == WSA_INVALID_EVENT)
     {
         sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;

@@ -124,8 +124,6 @@ int ClientSendSetup(char* addr, SOCKET sock, int port)
         return -1;
     }
 
-    sockOpen = true;
-
     qDebug() << "Setup success";
 	return 0;
 }

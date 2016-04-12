@@ -12,8 +12,7 @@ QFile dFile;
 QAudioInput * audio;
 CircularBuffer * cb, *circularBufferRecv;
 QBuffer *microphoneBuffer, *listeningBuffer;
-bool isRecording;
-bool isPlaying;
+bool isRecording, isPlaying;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -26,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
-    ClientReceiveSetupP2P();
+    p2pListenSockOpen = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
     ClientListenP2P();
 
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
@@ -124,8 +123,8 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectOutBtn_clicked()
 {
-    if ((sendSockOpen = ClientSendSetup(ui->peerIp->text().toLatin1().data()) == 0,
-            sendSock, SERVER_PACKET_SIZE))
+    if ((sendSockOpen = ClientSendSetup(ui->peerIp->text().toLatin1().data(),
+            sendSock, SERVER_DEFAULT_PORT)) == 0)
     {
         ui->connectOutBtn->setEnabled(false);
         ui->peerIp->setEnabled(false);
@@ -145,7 +144,7 @@ void MainWindow::on_disconnectOutBtn_clicked()
 
 void MainWindow::on_openInBtn_clicked()
 {
-    if (ClientReceiveSetup() == 0)
+    if ((listenSockOpen = ClientReceiveSetup(listenSock, SERVER_DEFAULT_PORT, acceptEvent)) == 0)
     {
         QFile *file = new QFile(QFileDialog::getSaveFileName(this, tr("Save song as"), 0, tr("Music (*.wav)")));
         if (file->fileName() != NULL)
@@ -211,8 +210,8 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    audio->start(microphoneBuffer);
    audioManager->playRecord();
 
-   p2pSendSockOpen = ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data(),
-                                        p2pSendSock, CLIENT_PACKET_SIZE);
+   p2pSendSockOpen = ClientSendSetup(ui->peerVoiceIp->text().toLatin1().data(),
+                                        p2pSendSock, P2P_DEFAULT_PORT);
    ClientSendMicrophoneData();
 }
 

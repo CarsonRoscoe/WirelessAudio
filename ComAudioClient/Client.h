@@ -16,7 +16,7 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter);
 DWORD WINAPI ClientSendThread(LPVOID lpParameter);
 void ClientCleanup(SOCKET s);
 // Receiving Prototypes
-int ClientReceiveSetup();
+int ClientReceiveSetup(SOCKET sock, int port, WSAEVENT event);
 int ClientListen(HANDLE hFile);
 DWORD WINAPI ClientListenThread(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThread(LPVOID lpParameter);
@@ -24,9 +24,7 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter);
 //P2P
-int ClientSendSetupP2P(char* addr);
 int ClientSendMicrophoneData();
-int ClientReceiveSetupP2P();
 int ClientListenP2P();
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
@@ -62,9 +60,9 @@ extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
 // Receiving
-extern SOCKET listenSock, acceptSock;
-extern bool listenSockOpen, acceptSockOpen;
-extern WSAEVENT acceptEvent;
+extern SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
+extern bool listenSockOpen, acceptSockOpen, p2pListenSockOpen, p2pAcceptSockOpen;
+extern WSAEVENT acceptEvent, p2pAcceptEvent;
 extern HANDLE hReceiveFile;
 extern bool hReceiveOpen;
 extern LPSOCKET_INFORMATION SI, p2pSI;
