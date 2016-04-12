@@ -53,6 +53,8 @@ private slots:
 
     void on_closeInBtn_clicked();
 
+    void on_refreshList_clicked();
+
 private:
     Ui::MainWindow *ui;
     AudioManager *audioManager;

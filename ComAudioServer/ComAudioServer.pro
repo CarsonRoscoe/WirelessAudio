@@ -16,7 +16,8 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     serverreceive.cpp \
     serversend.cpp \
-    ../ComAudioClient/circularbuffer.cpp
+    ../ComAudioClient/circularbuffer.cpp \
+    servercontrolchannel.cpp
 
 HEADERS  += mainwindow.h \
     server.h \

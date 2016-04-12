@@ -30,16 +30,24 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter);
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+// Control Channel
+int ClientSendRequest(int flag);
+DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter);
 
 ///////////////////// Macros //////////////////////////////
 #define SERVER_DEFAULT_PORT 7001
 #define CLIENT_DEFAULT_PORT 7002
 #define P2P_DEFAULT_PORT    7003
-#define SONG_REQUEST_PORT   7004
+#define CONTROL_PORT        7004
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
 #define CLIENT_PACKET_SIZE  8192
 #define SERVER_PACKET_SIZE  8192
+
+////////////////// Control Channel Flags ///////////////////
+#define GET_UPDATE_SONG_LIST    1
+#define SEND_SONG_TO_SERVER     2
+#define GET_SONG_FROM_SERVER    3
 
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
@@ -52,20 +60,31 @@ typedef struct _SOCKET_INFORMATION {
 
 ///////////////////// Global Variables ////////////////////
 // Sending
-extern char address[100], p2pAddress[100];
-extern SOCKET sendSock, p2pSendSock;
-extern bool sendSockOpen, p2pSendSockOpen;
-extern struct sockaddr_in server, otherClient;
+extern char address[100];
+extern SOCKET sendSock;
+extern bool sendSockOpen;
+extern struct sockaddr_in server;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
 // Receiving
-extern SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
-extern bool listenSockOpen, acceptSockOpen, p2pListenSockOpen, p2pAcceptSockOpen;
-extern WSAEVENT acceptEvent, p2pAcceptEvent;
+extern SOCKET listenSock, acceptSock;
+extern bool listenSockOpen, acceptSockOpen;
+extern WSAEVENT acceptEvent;
 extern HANDLE hReceiveFile;
 extern bool hReceiveOpen;
-extern LPSOCKET_INFORMATION SI, p2pSI;
+extern LPSOCKET_INFORMATION SI;
 extern CircularBuffer* circularBufferRecv;
+// P2P
+extern char p2pAddress[100];
+extern struct sockaddr_in otherClient;
+extern SOCKET p2pListenSock, p2pAcceptSock, p2pSendSock;
+extern bool p2pListenSockOpen, p2pAcceptSockOpen, p2pSendSockOpen;
+extern WSAEVENT p2pAcceptEvent;
+extern LPSOCKET_INFORMATION p2pSI;
+// Control Channel
+extern char sendFileName[100], recvFileName[100];
+extern SOCKET controlSock;
+extern bool controlSockOpen;
 
 #endif

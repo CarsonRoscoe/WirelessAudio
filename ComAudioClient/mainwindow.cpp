@@ -259,3 +259,8 @@ void MainWindow::on_stopRecordBtn_clicked()
     //delete audio;
 }
 
+
+void MainWindow::on_refreshList_clicked()
+{
+    ClientSendRequest(GET_UPDATE_SONG_LIST);
+}

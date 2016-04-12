@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     ClientReceive.cpp \
     ClientSend.cpp \
     populatebufferworker.cpp \
-    readfileworker.cpp
+    readfileworker.cpp \
+    clientcontrolchannel.cpp
 
 HEADERS  += mainwindow.h \
     audiomanager.h \

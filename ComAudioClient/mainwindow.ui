@@ -21,7 +21,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>3</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="mediaTab">
        <attribute name="title">
@@ -208,6 +208,13 @@
         <string>Radio</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
+        <item row="2" column="0" colspan="3">
+         <widget class="QListWidget" name="playlistList">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
         <item row="0" column="0">
          <widget class="QLineEdit" name="serverIp">
           <property name="text">
@@ -215,6 +222,13 @@
           </property>
           <property name="placeholderText">
            <string>Server IP</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Playlist</string>
           </property>
          </widget>
         </item>
@@ -238,17 +252,10 @@
           </property>
          </widget>
         </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label">
+        <item row="3" column="0">
+         <widget class="QPushButton" name="refreshList">
           <property name="text">
-           <string>Playlist</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="0" colspan="3">
-         <widget class="QListWidget" name="playlistList">
-          <property name="enabled">
-           <bool>true</bool>
+           <string>Refresh Song List</string>
           </property>
          </widget>
         </item>

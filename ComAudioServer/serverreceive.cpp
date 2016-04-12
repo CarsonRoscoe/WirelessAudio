@@ -67,7 +67,7 @@ int totalbytesreceived, totalbyteswritten;
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ServerReceiveSetup()
+int ServerReceiveSetup(SOCKET sock, int port, WSAEVENT event)
 {
     int ret;
     WSADATA wsaData;
@@ -81,30 +81,32 @@ int ServerReceiveSetup()
         return -1;
     }
 
-    // TCP create WSA socket
-    if ((listenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
-        WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
+    if (event != NULL)
     {
-        sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
+        // TCP create WSA socket
+        if ((sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
+            WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
+        {
+            sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
+    } else
+    {
+        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        {
+            sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
     }
-
-    // UDP create WSA socket (if needed in future) ////////////////////////
-    /*if ((listenSock = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0,
-        WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
-    {
-        sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
-    }*/
 
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(SERVER_DEFAULT_PORT);
+    InternetAddr.sin_port = htons(port);
 
-    if (bind(listenSock, (PSOCKADDR)&InternetAddr,
+    if (bind(sock, (PSOCKADDR)&InternetAddr,
         sizeof(InternetAddr)) == SOCKET_ERROR)
     {
         sprintf_s(errMsg, "bind() failed with error %d\n", WSAGetLastError());
@@ -112,19 +114,21 @@ int ServerReceiveSetup()
         return -1;
     }
     // TCP listen on socket (no corresponding UDP call)
-    if (listen(listenSock, 5))
+    if (listen(sock, MAX_CLIENTS))
     {
         sprintf_s(errMsg, "listen() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;
         return -1;
     }
-    listenSockOpen = true;
 
-    if ((acceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT)
+    if (event != NULL)
     {
-        sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
+        if ((event = WSACreateEvent()) == WSA_INVALID_EVENT)
+        {
+            sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
     }
 
     qDebug() << "Success!";

@@ -531,10 +531,8 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
 
 //Carson, designed by Micah
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
-    DWORD byteswrittenfile = 0;
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
-    char delim[6] = {(int)'d', (int)'e', (int)'l', (int)'i', (int)'m', '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
     hReceiveFile = (HANDLE) lpParameter;

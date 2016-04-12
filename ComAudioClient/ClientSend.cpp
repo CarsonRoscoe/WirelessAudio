@@ -94,13 +94,6 @@ int ClientSendSetup(char* addr, SOCKET sock, int port)
         return -1;
     }
 
-    // UDP Open Socket (if needed in future) ////////////////////
-    /*if ((sendSock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-    {
-        qDebug() << "Cannot create udp socket\n";
-        return -1;
-    }*/
-
 	// Initialize and set up the address structure
     memset((char *)&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;

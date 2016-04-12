@@ -20,6 +20,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ipAddr->setValidator(val);
 //    ui->ipAddr->setText("192.168.0.5");
     ui->ipAddr->setText("127.0.0.1");
+    GetSongList();
 }
 
 MainWindow::~MainWindow()
@@ -82,7 +83,7 @@ void MainWindow::on_disconnectOutBtn_clicked()
 
 void MainWindow::on_openInBtn_clicked()
 {
-    if (ServerReceiveSetup() == 0)
+    if ((listenSockOpen = ServerReceiveSetup(listenSock, SERVER_DEFAULT_PORT, acceptEvent)) == 0)
     {
         ui->openInBtn->setEnabled(false);
         ui->closeInBtn->setEnabled(true);
