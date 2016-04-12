@@ -71,7 +71,7 @@ int totalbytessent;
 --	NOTES:
 --      This function sets up the socket for sending a file to the server
 ---------------------------------------------------------------------------------------*/
-int ClientSendSetup(char* addr)
+int ClientSendSetup(char* addr, SOCKET sock, int port)
 {
 	WSADATA WSAData;
 	WORD wVersionRequested;
@@ -87,7 +87,7 @@ int ClientSendSetup(char* addr)
 	}
     qDebug() << "test";
     // TCP Open Socket
-    if ((sendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Cannot create tcp socket\n";
@@ -104,7 +104,7 @@ int ClientSendSetup(char* addr)
 	// Initialize and set up the address structure
     memset((char *)&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_DEFAULT_PORT);
+    server.sin_port = htons(port);
     if ((hp = gethostbyname(address)) == NULL)
 	{
         ShowLastErr(true);
@@ -117,67 +117,17 @@ int ClientSendSetup(char* addr)
 
 	
     // TCP Connecting to the server
-    if (connect(sendSock, (struct sockaddr *)&server, sizeof(server)) == -1)
+    if (connect(sock, (struct sockaddr *)&server, sizeof(server)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Can't connect to server\n";
         return -1;
     }
 
-    sendSockOpen = true;
+    sockOpen = true;
 
     qDebug() << "Setup success";
 	return 0;
-}
-
-int ClientSendSetupP2P(char* addr) {
-    WSADATA WSAData;
-    WORD wVersionRequested;
-    struct hostent	*hp;
-    strcpy(p2pAddress, addr);
-
-    wVersionRequested = MAKEWORD(2, 2);
-    if (WSAStartup(wVersionRequested, &WSAData) != 0) {
-        ShowLastErr(true);
-        qDebug() << "DLL not found";
-        return -1;
-    }
-
-    // TCP Open Socket
-    if ((p2pSendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-        ShowLastErr(true);
-        qDebug() << "Cannot create tcp socket";
-        return -1;
-    }
-
-    // Initialize and set up the address structure
-    memset((char *)&otherClient, 0, sizeof(struct sockaddr_in));
-    otherClient.sin_family = AF_INET;
-    otherClient.sin_port = htons(P2P_DEFAULT_PORT);
-    if ((hp = gethostbyname(p2pAddress)) == NULL) {
-        ShowLastErr(true);
-        qDebug() << "Unknown server address";
-        return -1;
-    }
-
-
-    // Copy the server address
-    memcpy((char *)&otherClient.sin_addr, hp->h_addr, hp->h_length);
-
-    qDebug () << "Attempting to accept request to ip " << p2pAddress << " on port " << P2P_DEFAULT_PORT;
-
-    // TCP Connecting to the server
-    if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
-        ShowLastErr(true);
-        qDebug() << "Can't connect to server";
-        return -1;
-    }
-
-    qDebug () << "Connected!";
-
-    p2pSendSockOpen = true;
-
-    return 0;
 }
 
 /*---------------------------------------------------------------------------------------

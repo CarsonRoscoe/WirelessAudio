@@ -9,7 +9,7 @@
 ///////////////////// Global Prototypes ///////////////////
 // Sending Prototypes
 void ShowLastErr(bool wsa);
-int ClientSendSetup(char* addr);
+int ClientSendSetup(char* addr, SOCKET sock, int port);
 void ClientCleanup();
 int ClientSend(HANDLE hFile);
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter);

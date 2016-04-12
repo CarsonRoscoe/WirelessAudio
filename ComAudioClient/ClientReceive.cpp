@@ -56,7 +56,7 @@ int ClientReceiveSetupP2P() {
 
     // TCP create WSA socket
     if ((p2pListenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
-        qDebug() << "Failed tog et a socket " << WSAGetLastError();
+        qDebug() << "Failed to get a socket " << WSAGetLastError();
         return -1;
     }
 
@@ -65,7 +65,7 @@ int ClientReceiveSetupP2P() {
     InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
 
     if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
-        qDebug() << "bind) failed with error " << WSAGetLastError();
+        qDebug() << "bind()) failed with error " << WSAGetLastError();
         return -1;
     }
 

@@ -124,7 +124,8 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectOutBtn_clicked()
 {
-    if (ClientSendSetup(ui->peerIp->text().toLatin1().data()) == 0)
+    if ((sendSockOpen = ClientSendSetup(ui->peerIp->text().toLatin1().data()) == 0,
+            sendSock, SERVER_PACKET_SIZE))
     {
         ui->connectOutBtn->setEnabled(false);
         ui->peerIp->setEnabled(false);
@@ -210,7 +211,8 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    audio->start(microphoneBuffer);
    audioManager->playRecord();
 
-   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
+   p2pSendSockOpen = ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data(),
+                                        p2pSendSock, CLIENT_PACKET_SIZE);
    ClientSendMicrophoneData();
 }
 

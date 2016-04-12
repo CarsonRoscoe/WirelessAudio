@@ -33,7 +33,6 @@
 #include <QDebug>
 #include <QString>
 #include <QBuffer>
-#include <tchar.h>
 #include "server.h"
 
 ////////// "Real" of the externs in Server.h ///////////////
@@ -144,9 +143,7 @@ int ServerReceiveSetup()
 --
 --	PROGRAMMER:		Micah Willems
 --
---  INTERFACE:      int ServerListen(HANDLE hFile)
---
---                        HANDLE hFile: a handle to the file to write the incoming data to
+--  INTERFACE:      int ServerListen()
 --
 --  RETURNS:        Returns 0 on success, -1 on failure
 --
@@ -435,7 +432,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 --      available, to lessen the load on the callback. For each pair of data items it
 --      pulls out, the first is the number that indicates how many bytes is actual data
 --      in the other. The function then checks for the delimeter indicating the last
---      packet, and aftewards writes the data to the open file.
+--      packet, and aftewards writes the data to a file.
 ---------------------------------------------------------------------------------------*/
 DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 {
@@ -444,19 +441,18 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    LPCWSTR filename = (wchar_t *)calloc(25, sizeof(wchar_t));
-    LPCWSTR num = (wchar_t *)calloc(4, sizeof(wchar_t));
-    wsprintfW(num, "%d", receivedSongNum);
-    StringCchCat(filename, 20, "Library\receivedsong");
-    StringCchCat(filename, 3, num);
-    StringCchCat(filename, 4, ".wav");
+    std::wstring filename;
+    std::wstring num = std::to_wstring(receivedSongNum);
+    filename += TEXT("\.\\Library\\receivedsong");
+    filename += num;
+    filename += TEXT(".wav");
 
     CreateDirectory(TEXT("Library"), NULL);
-    DeleteFile(filename);
-    HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+    ShowLastErr(false);
+    DeleteFile(filename.c_str());
+    HANDLE hFile = CreateFile(filename.c_str(), GENERIC_WRITE, 0, NULL, CREATE_NEW,
                               FILE_ATTRIBUTE_NORMAL, NULL);
-    free(filename);
-    free(num);
+    ShowLastErr(false);
 
     while(!lastPacket)
     {
@@ -525,6 +521,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 #endif
         }
     }
+    CloseHandle(hFile);
     return TRUE;
 }
 
