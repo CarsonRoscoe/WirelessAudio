@@ -29,11 +29,12 @@
 
 ////////// "Real" of the externs in Client.h ///////////////
 char address[100];
-SOCKET sendSock;
-bool sendSockOpen;
+SOCKET sendSock[MAX_CLIENTS];
+bool sendSockClosed = 1;
 struct sockaddr_in server;
 HANDLE hSendFile;
-bool hSendOpen;
+bool hSendClosed = 1;
+char sendFileName[100];
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ServerSendSetup
@@ -56,7 +57,7 @@ bool hSendOpen;
 --	NOTES:
 --      This function sets up the socket for sending a file to the client
 ---------------------------------------------------------------------------------------*/
-int ServerSendSetup(char* addr)
+int ServerSendSetup(char* addr, int clientID)
 {
     WSADATA WSAData;
     WORD wVersionRequested;
@@ -71,7 +72,7 @@ int ServerSendSetup(char* addr)
     }
 
     // TCP Open Socket
-    if ((sendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((sendSock[clientID] = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Cannot create tcp socket\n";
@@ -94,14 +95,12 @@ int ServerSendSetup(char* addr)
 
 
     // TCP Connecting to the server
-    if (connect(sendSock, (struct sockaddr *)&server, sizeof(server)) == -1)
+    if (connect(sendSock[clientID], (struct sockaddr *)&server, sizeof(server)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Can't connect to server\n";
         return -1;
     }
-
-    sendSockOpen = true;
 
     qDebug() << "Setup success";
     return 0;
@@ -128,13 +127,13 @@ int ServerSendSetup(char* addr)
 --	NOTES:
 --      This is the function that starts the thread to send a file to the client
 ---------------------------------------------------------------------------------------*/
-int ServerSend(HANDLE hFile)
+int ServerSend(int clientID)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hSendOpen = true;
+    hSendClosed = 0;
 
-    if ((hThread = CreateThread(NULL, 0, ServerSendThread, (LPVOID)hFile, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ServerSendThread, (LPVOID)clientID, 0, &ThreadId)) == NULL)
     {
         ShowLastErr(false);
         qDebug() << "Create Send Thread failed";
@@ -168,12 +167,12 @@ int ServerSend(HANDLE hFile)
 ---------------------------------------------------------------------------------------*/
 DWORD WINAPI ServerSendThread(LPVOID lpParameter)
 {
-    hSendFile = (HANDLE) lpParameter;
+    int clientID = (int) lpParameter;
     char *sendbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     DWORD  dwBytesRead;
     int sentBytes = 0;
     while (true) {
-        if (ReadFile(hSendFile, sendbuff, SERVER_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
+        if (ReadFile(hReceivedFile, sendbuff, SERVER_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
         {
             ShowLastErr(false);
             qDebug() << "Couldn't read file";

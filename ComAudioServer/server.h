@@ -43,31 +43,32 @@ typedef struct _SOCKET_INFORMATION {
 ///////////////////// Global Variables ////////////////////
 // Receiving
 extern SOCKET listenSock, acceptSock;
-extern bool listenSockOpen, acceptSockOpen;
+extern bool listenSockClosed, acceptSockClosed;
 extern struct sockaddr_in server;
-extern WSAEVENT acceptEvent;
+extern WSAEVENT acceptEvent, defaultEvent;
 extern LPSOCKET_INFORMATION SI;
 extern char errMsg[ERRORSIZE];
 extern CircularBuffer* circularBufferRecv;
-extern int receivedSongNum;
+extern char recvFileName[100];
 // Sending
 extern char address[100];
-extern SOCKET sendSock;
-extern bool sendSockOpen;
+extern SOCKET sendSock[MAX_CLIENTS];
+extern bool sendSockClosed;
 extern HANDLE hSendFile;
-extern bool hSendOpen;
+extern bool hSendClosed;
 extern struct sockaddr_in server;
+extern char sendFileName[100];
 // Control Channel
 extern SOCKET controlSock, Clients[MAX_CLIENTS];
-extern bool controlSockOpen, clientOpen[MAX_CLIENTS];
+extern bool controlSockOpen, clientClosed[MAX_CLIENTS];
 extern struct sockaddr_in client;
-extern char *songList[100];
-extern int currClient;
+extern char **songList;
+extern int numClients, numSongs;
 
 ///////////////////// Global Prototypes ///////////////////
 // Receiving
 void ShowLastErr(bool wsa);
-int ServerReceiveSetup(SOCKET sock, int port, WSAEVENT event = NULL);
+int ServerReceiveSetup(SOCKET &sock, int port, bool noEvent, WSAEVENT &event = defaultEvent);
 int ServerListen();
 DWORD WINAPI ServerListenThread(LPVOID lpParameter);
 void ServerCleanup();
@@ -76,7 +77,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
     LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter);
 // Sending
-int ServerSendSetup(char* addr);
+int ServerSendSetup(char* addr, int clientID);
 int ServerSend(HANDLE hFile);
 DWORD WINAPI ServerSendThread(LPVOID lpParameter);
 // Control Channel
