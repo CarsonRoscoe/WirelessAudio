@@ -16,11 +16,13 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     circularbuffer.cpp \
     serverreceive.cpp \
-    serversend.cpp
+    serversend.cpp \
+    serverudp.cpp
 
 HEADERS  += mainwindow.h \
     circularbuffer.h \
-    server.h
+    server.h \
+    serverudp.h
 
 FORMS    += mainwindow.ui
 

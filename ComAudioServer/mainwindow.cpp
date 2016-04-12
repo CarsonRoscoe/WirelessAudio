@@ -2,11 +2,17 @@
 #include "ui_mainwindow.h"
 #include "server.h"
 
+#include "serverudp.h"
+
 #include <QDebug>
 #include <QFileDialog>
 #include <io.h>
 
+ServerUDP udpserver;
+
 CircularBuffer *circularBufferRecv;
+
+DWORD WINAPI send_thread(LPVOID lp_param);
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -20,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->ipAddr->setValidator(val);
 //    ui->ipAddr->setText("192.168.0.5");
     ui->ipAddr->setText("127.0.0.1");
+
+    load_local_files();
 }
 
 MainWindow::~MainWindow()
@@ -27,9 +35,59 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::load_local_files() {
+    ui->songList->clear();
+
+    QStringList nameFilter("*.wav");
+    QDir directory(QDir::currentPath());
+
+    if (!directory.cd("../AudioFiles")) {
+        qWarning() << "Can't find /AudioFiles directory!";
+        return;
+    }
+
+    QStringList files = directory.entryList(nameFilter);
+
+    ui->songList->addItems(files);
+    ui->songList->setCurrentRow(0);
+}
+
 void MainWindow::on_startServerBtn_clicked()
 {
+    if (!udpserver.init_socket(7000)) {
+        qDebug() << "failed to init socket";
+    }
 
+    if (!udpserver.init_multicast("255.255.255.255")) {
+        qDebug() << "failed to set multicast settings";
+    }
+
+    DWORD thread_id;
+    if (CreateThread(NULL, 0, send_thread, (LPVOID) &udpserver, 0, &thread_id) == NULL) {
+        qDebug() << "failed to create thread";
+    }
+}
+
+DWORD WINAPI send_thread(LPVOID lp_param) {
+    qDebug() << "thread created";
+
+    ServerUDP* serv = (ServerUDP*)lp_param;
+    DWORD bytes_to_send = 10;
+
+    char ** msg = (char**) malloc(sizeof(char*));
+
+    for (int i = 1; i < 10; i++) {
+        *msg += (char) i;
+    }
+
+    while (1) {
+        // if there is stuff to send
+
+        if (!serv->broadcast_message(*msg, &bytes_to_send)) {
+            qDebug() << "broadcast failed";
+        }
+        Sleep(1000);
+    }
 }
 
 void MainWindow::on_startBroadcastBtn_clicked()

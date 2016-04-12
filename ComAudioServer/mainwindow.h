@@ -38,6 +38,9 @@ private slots:
     void on_closeInBtn_clicked();
 
 private:
+
+    void load_local_files();
+
     Ui::MainWindow *ui;
 };
 
