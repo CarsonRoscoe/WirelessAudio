@@ -221,7 +221,7 @@ int ClientSend(HANDLE hFile)
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     hSendFile = (HANDLE) lpParameter;
     //char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
-    char sendbuff[CLIENT_PACKET_SIZE+1]= { '\0'};
+    char sendbuff[CLIENT_PACKET_SIZE]= { '\0'};
     DWORD  dwBytesRead;
     int sentBytes = 0;
     //memset(sendbuff,'\0',sizeof(sendbuff));
@@ -233,25 +233,22 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     }
     QTextStream stream(&file);
     while (isRecording) {
-
         if (!micBuf->pop(sendbuff)) {
            continue;
         }
-
         file.write(sendbuff, CLIENT_PACKET_SIZE);
-        if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
+        /*if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
         {
             //stream<<sendbuff;
-            /*
+
             sendbuff[dwBytesRead] = 'm';
             sendbuff[dwBytesRead+1] = 'i';
             sendbuff[dwBytesRead+2] = 'l';
             sendbuff[dwBytesRead+3] = 'e';
             sendbuff[dwBytesRead+4] = 'd';
-            */
              //qDebug() << "Reading stuff";
-        }
-        //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+        }*/
+        sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
     }
 
     //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);

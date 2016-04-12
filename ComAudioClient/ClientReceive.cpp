@@ -557,9 +557,7 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         return;
     }
 
-    char slotsize[SERVER_PACKET_SIZE];
-    sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
+    if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
         qDebug() << "Writing received packet to circular buffer failed";
 
     Flags = 0;
@@ -616,7 +614,7 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
             int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
             listeningBuffer->seek(newpos);
             listeningBuffer->write(writeBuf, packetSize);
-            listeningBuffer->write(writeBuf, packetSize);
+            //listeningBuffer->write(writeBuf, packetSize);
             for(int i =0; i < packetSize;i++){
                 stream <<writeBuf[i];
             }

@@ -34,8 +34,8 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
-   // ClientReceiveSetupP2P();
-    //ClientListenP2P();
+    ClientReceiveSetupP2P();
+    ClientListenP2P();
 
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
@@ -53,7 +53,7 @@ MainWindow::MainWindow(QWidget *parent) :
 //    ui->peerVoiceIp->setText("192.168.0.6");
     ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("127.0.0.7");
-    ui->peerVoiceIp->setText("192.168.0.5");
+    ui->peerVoiceIp->setText("192.168.0.7");
 }
 
 MainWindow::~MainWindow()
@@ -188,12 +188,12 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
-    byteArray=microphoneBuffer->buffer();
+    //byteArray=microphoneBuffer->buffer();
     dFile.setFileName("../RecordTest.raw");
     dFile.open( QIODevice::ReadWrite);
 
    microphoneBuffer->open( QIODevice::ReadWrite);
-   listeningBuffer->open(QIODevice::ReadWrite);
+   //listeningBuffer->open(QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
    format.setSampleRate(16000);
@@ -219,7 +219,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
    audioFile->start(&dFile);
-   //ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
+   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
 
@@ -227,7 +227,7 @@ void MainWindow::on_recordBtn_clicked()
 {
 
 
-    byteArray=microphoneBuffer->buffer();
+  //  byteArray=microphoneBuffer->buffer();
    dFile.setFileName("../RecordTest.raw");
    dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
@@ -275,14 +275,17 @@ void MainWindow::on_stopRecordBtn_clicked()
 void MainWindow::StoreToBuffer(){
     char tempbuff[CLIENT_PACKET_SIZE];
     //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
-    microphoneBuffer->seek(curpos);
-    int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
-    curpos+=bytes;
-    microphoneBuffer->seek(microphoneBuffer->size()-1);
-    qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
-    qDebug()<<"Push back to buffer her, bytes read:" << bytes;
 
-    if(!micBuf->pushBack(tempbuff)){
-        qDebug()<<"Pushback FAILED";
+    microphoneBuffer->seek(curpos);
+    if(microphoneBuffer->bytesAvailable()>=CLIENT_PACKET_SIZE){
+        int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
+        curpos+=bytes;
+        microphoneBuffer->seek(microphoneBuffer->size()-1);
+        qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
+        qDebug()<<"Push back to buffer her, bytes read:" << bytes;
+
+        if(!micBuf->pushBack(tempbuff)){
+            qDebug()<<"Pushback FAILED";
+        }
     }
 }
