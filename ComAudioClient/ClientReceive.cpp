@@ -560,13 +560,13 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
     p2pSI->DataBuf.buf = p2pSI->Buffer;
 
-    SleepEx(1, true);
+    //SleepEx(10, true);
     if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
         } else {
-            SleepEx(10000, true);
+            SleepEx(1000, true);
         }
     }
 
