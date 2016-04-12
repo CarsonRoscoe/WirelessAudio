@@ -551,7 +551,6 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
         return;
     }
 
-    qDebug() <<"Transfered:" << BytesTransferred;
     if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
         qDebug() << "Writing received packet to circular buffer failed";
 
