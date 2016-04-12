@@ -21,7 +21,7 @@ QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording;
 bool isPlaying;
   QByteArray byteArray;
-
+int curpos=0;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -249,7 +249,7 @@ void MainWindow::on_recordBtn_clicked()
 
    audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-    audio->setNotifyInterval(200);
+    audio->setNotifyInterval(1);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
    connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
@@ -273,11 +273,15 @@ void MainWindow::on_stopRecordBtn_clicked()
 }
 
 void MainWindow::StoreToBuffer(){
+    char tempbuff[CLIENT_PACKET_SIZE];
+    //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
+    microphoneBuffer->seek(curpos);
+    int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
+    curpos+=bytes;
+    microphoneBuffer->seek(microphoneBuffer->size()-1);
+    qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
+    qDebug()<<"Push back to buffer her, bytes read:" << bytes;
 
-char *tempbuff = (char *)calloc(CLIENT_PACKET_SIZE, sizeof(char));
- microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
-
-qDebug()<<"Push back to buffer here";
     if(!micBuf->pushBack(tempbuff)){
         qDebug()<<"Pushback FAILED";
     }

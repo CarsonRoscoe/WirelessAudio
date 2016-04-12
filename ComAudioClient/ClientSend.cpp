@@ -220,37 +220,38 @@ int ClientSend(HANDLE hFile)
 //Written by Carson, designed by Micah since it follows her other thread design
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     hSendFile = (HANDLE) lpParameter;
-    char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    //char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    char sendbuff[CLIENT_PACKET_SIZE+1]= { '\0'};
     DWORD  dwBytesRead;
     int sentBytes = 0;
-    memset(sendbuff,'\0',sizeof(sendbuff));
-
-    QString filename = "RecordBufferdata.txt";
+    //memset(sendbuff,'\0',sizeof(sendbuff));
+     memset(sendbuff,'\0',sizeof(sendbuff));
+    QString filename = "RecordBufferdata2.txt";
     QFile file(filename);
-    if(!file.open(QIODevice::WriteOnly)){
+    if(!file.open(QIODevice::ReadWrite)){
         qDebug()<< "Error, File didn't open";
     }
-
     QTextStream stream(&file);
     while (isRecording) {
-        micBuf->pushBack(sendbuff);
-        //dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE -5);
-        stream<<sendbuff;
+
+        if (!micBuf->pop(sendbuff)) {
+           continue;
+        }
+
+        file.write(sendbuff, CLIENT_PACKET_SIZE);
         if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
         {
-            stream<<sendbuff;
+            //stream<<sendbuff;
+            /*
             sendbuff[dwBytesRead] = 'm';
             sendbuff[dwBytesRead+1] = 'i';
             sendbuff[dwBytesRead+2] = 'l';
             sendbuff[dwBytesRead+3] = 'e';
             sendbuff[dwBytesRead+4] = 'd';
-             qDebug() << "Reading stuff";
+            */
+             //qDebug() << "Reading stuff";
         }
         //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-//#ifdef DEBUG_MODE
-       // qDebug() << "\nRecorded bytes:" << dwBytesRead;
-        //qDebug() << "Sent bytes:" << sentBytes;
-//#endif
     }
 
     //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
