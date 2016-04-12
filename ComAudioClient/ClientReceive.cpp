@@ -36,10 +36,10 @@
 
 ////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
-bool listenSockOpen, acceptSockOpen, p2pListenSockOpen, p2pAcceptSockOpen;
+bool listenSockClosed = 1, acceptSockClosed = 1, p2pListenSockClosed = 1, p2pAcceptSockClosed = 1;
 WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
-bool hReceiveOpen;
+bool hReceiveClosed = 1;
 LPSOCKET_INFORMATION SI, p2pSI;
 
 /*---------------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ LPSOCKET_INFORMATION SI, p2pSI;
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ClientReceiveSetup(SOCKET sock, int port, WSAEVENT event)
+int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event)
 {
     int ret;
     WSADATA wsaData;
@@ -141,7 +141,7 @@ int ClientListen(HANDLE hFile)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hReceiveOpen = true;
+    hReceiveClosed = 0;
 
     if ((hThread = CreateThread(NULL, 0, ClientListenThread, (LPVOID) hFile, 0, &ThreadId)) == NULL)
     {
@@ -230,7 +230,7 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
         p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
         qDebug() << "P2P Accepted a request";
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
-            qDebug() << "WSASetEvent failed with error " << WSAGetLastError();
+            qDebug() << "P2P WSASetEvent failed with error" << WSAGetLastError();
             return FALSE;
         }
     }
@@ -316,7 +316,7 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
         SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
-        acceptSockOpen = true;
+        acceptSockClosed = true;
         qDebug() << errMsg;
 
 
@@ -385,7 +385,7 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
     sprintf_s(errMsg, "Socket %d connected\n", p2pAcceptSock);
-    p2pAcceptSockOpen = true;
+    p2pAcceptSockClosed = true;
     qDebug() << errMsg;
 
     Flags = 0;

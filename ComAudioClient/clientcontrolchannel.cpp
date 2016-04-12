@@ -9,8 +9,9 @@
 
 ////////// "Real" of the externs in Server.h //////////////
 char sendFileName[100], recvFileName[100];
+char **songList = new char*[100];
 SOCKET controlSock;
-bool controlSockOpen;
+bool controlSockClosed = 1;
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientSend
@@ -53,7 +54,7 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
     int flag = (int)lpParameter;
-    int sentBytes = 0, err = 1;
+    int sentBytes = 0, err = 1, i = 0;
     switch (flag)
     {
     case GET_UPDATE_SONG_LIST:
@@ -62,7 +63,10 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         while(err != 0 && err != SOCKET_ERROR)
         {
             err = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
-            strcat(message, recvbuff);
+            songList[i] = new char[100];
+            strcpy(songList[i], recvbuff);
+            qDebug() << songList[i];
+            i++;
         }
         break;
     case SEND_SONG_TO_SERVER:
@@ -72,7 +76,10 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         while(err != 0 && err != SOCKET_ERROR)
         {
             err = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
-            strcat(message, recvbuff);
+        }
+        if (recvbuff[0] == 0)
+        {
+
         }
         break;
     case GET_SONG_FROM_SERVER:

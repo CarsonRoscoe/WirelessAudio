@@ -38,13 +38,13 @@
 ////////// "Real" of the externs in Client.h ///////////////
 char address[100], p2pAddress[100];
 SOCKET sendSock, p2pSendSock;
-bool sendSockOpen, p2pSendSockOpen;
+bool sendSockClosed = 1, p2pSendSockClosed = 1;
 struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
 
 /////////////////// Globals ////////////////////////////////
 HANDLE hSendFile;
-bool hSendOpen;
+bool hSendClosed = 1;
 
 //////////////////// Debug vars ///////////////////////////
 #define DEBUG_MODE
@@ -71,7 +71,7 @@ int totalbytessent;
 --	NOTES:
 --      This function sets up the socket for sending a file to the server
 ---------------------------------------------------------------------------------------*/
-int ClientSendSetup(char* addr, SOCKET sock, int port)
+int ClientSendSetup(char* addr, SOCKET &sock, int port)
 {
 	WSADATA WSAData;
 	WORD wVersionRequested;
@@ -146,7 +146,7 @@ int ClientSend(HANDLE hFile)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hSendOpen = true;
+    hSendClosed = 0;
 
     if ((hThread = CreateThread(NULL, 0, ClientSendThread, (LPVOID)hFile, 0, &ThreadId)) == NULL)
     {
@@ -284,30 +284,50 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
 ---------------------------------------------------------------------------------------*/
 void ClientCleanup()
 {
-    if (sendSockOpen)
+    if (!sendSockClosed)
     {
         closesocket(sendSock);
-        sendSockOpen = false;
+        sendSockClosed = -1;
     }
-    if (listenSockOpen)
+    if (!listenSockClosed)
     {
-        closesocket(listenSockOpen);
-        listenSockOpen = false;
+        closesocket(listenSockClosed);
+        listenSockClosed = -1;
     }
-    if (acceptSockOpen)
+    if (!acceptSockClosed)
     {
         closesocket(acceptSock);
-        acceptSockOpen = false;
+        acceptSockClosed = -1;
     }
-    if (hSendOpen)
+    if (!p2pListenSockClosed)
+    {
+        closesocket(p2pListenSock);
+        p2pListenSockClosed = -1;
+    }
+    if (!p2pAcceptSockClosed)
+    {
+        closesocket(p2pAcceptSock);
+        p2pAcceptSockClosed = -1;
+    }
+    if (!p2pSendSockClosed)
+    {
+        closesocket(p2pSendSock);
+        p2pSendSockClosed = -1;
+    }
+    if (!controlSockClosed)
+    {
+        closesocket(controlSock);
+        controlSockClosed = -1;
+    }
+    if (hSendClosed)
     {
         closesocket(sendSock);
-        hSendOpen = false;
+        hSendClosed = false;
     }
-    if (hReceiveOpen)
+    if (hReceiveClosed)
     {
         CloseHandle(hReceiveFile);
-        hReceiveOpen = false;
+        hReceiveClosed = false;
     }
     WSACleanup();
 }

@@ -9,14 +9,14 @@
 ///////////////////// Global Prototypes ///////////////////
 // Sending Prototypes
 void ShowLastErr(bool wsa);
-int ClientSendSetup(char* addr, SOCKET sock, int port);
+int ClientSendSetup(char* addr, SOCKET &sock, int port);
 void ClientCleanup();
 int ClientSend(HANDLE hFile);
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter);
 DWORD WINAPI ClientSendThread(LPVOID lpParameter);
 void ClientCleanup(SOCKET s);
 // Receiving Prototypes
-int ClientReceiveSetup(SOCKET sock, int port, WSAEVENT event);
+int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event);
 int ClientListen(HANDLE hFile);
 DWORD WINAPI ClientListenThread(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThread(LPVOID lpParameter);
@@ -62,29 +62,30 @@ typedef struct _SOCKET_INFORMATION {
 // Sending
 extern char address[100];
 extern SOCKET sendSock;
-extern bool sendSockOpen;
+extern bool sendSockClosed;
 extern struct sockaddr_in server;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
 // Receiving
 extern SOCKET listenSock, acceptSock;
-extern bool listenSockOpen, acceptSockOpen;
+extern bool listenSockClosed, acceptSockClosed;
 extern WSAEVENT acceptEvent;
 extern HANDLE hReceiveFile;
-extern bool hReceiveOpen;
+extern bool hReceiveClosed;
 extern LPSOCKET_INFORMATION SI;
 extern CircularBuffer* circularBufferRecv;
 // P2P
 extern char p2pAddress[100];
 extern struct sockaddr_in otherClient;
 extern SOCKET p2pListenSock, p2pAcceptSock, p2pSendSock;
-extern bool p2pListenSockOpen, p2pAcceptSockOpen, p2pSendSockOpen;
+extern bool p2pListenSockClosed, p2pAcceptSockClosed, p2pSendSockClosed;
 extern WSAEVENT p2pAcceptEvent;
 extern LPSOCKET_INFORMATION p2pSI;
 // Control Channel
 extern char sendFileName[100], recvFileName[100];
+extern char **songList;
 extern SOCKET controlSock;
-extern bool controlSockOpen;
+extern bool controlSockClosed;
 
 #endif

@@ -45,15 +45,11 @@ private slots:
 
     void on_stopRecordBtn_clicked();
 
-    void on_connectOutBtn_clicked();
+    void on_disconnectServerBtn_clicked();
 
-    void on_disconnectOutBtn_clicked();
+    void on_refreshListBtn_clicked();
 
-    void on_openInBtn_clicked();
-
-    void on_closeInBtn_clicked();
-
-    void on_refreshList_clicked();
+    void on_dwldFileBtn_clicked();
 
 private:
     Ui::MainWindow *ui;

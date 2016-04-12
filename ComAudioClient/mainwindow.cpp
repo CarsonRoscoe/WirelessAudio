@@ -25,8 +25,8 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
-    p2pListenSockOpen = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
-    ClientListenP2P();
+    //p2pListenSockClosed = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
+    //ClientListenP2P();
 
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     QRegExp regex;
@@ -38,11 +38,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->peerIp->setValidator(val);
     ui->serverIp->setValidator(val);
     ui->peerVoiceIp->setValidator(val);
-//    ui->peerIp->setText("192.168.0.6");
-//    ui->serverIp->setText("192.168.0.6");
-//    ui->peerVoiceIp->setText("192.168.0.6");
-    ui->peerIp->setText("192.168.0.7");
-    ui->serverIp->setText("127.0.0.7");
+    ui->peerIp->setText("192.168.0.5");
+    ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("127.0.0.1");
 }
 
@@ -106,70 +103,56 @@ void MainWindow::on_connectPeerBtn_clicked()
 
 }
 
+void MainWindow::on_requestFileBtn_clicked()
+{
+
+}
+
+// ---- Radio Streaming Functions ----
+
+void MainWindow::on_connectServerBtn_clicked()
+{
+    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+            controlSock, CONTROL_PORT)) == 0)
+    {
+        ui->connectServerBtn->setEnabled(false);
+        ui->serverIp->setEnabled(false);
+        ui->disconnectServerBtn->setEnabled(true);
+        ui->refreshListBtn->setEnabled(true);
+        ui->sendFileBtn->setEnabled(true);
+        ui->dwldFileBtn->setEnabled(true);
+    }
+}
+
+void MainWindow::on_disconnectServerBtn_clicked()
+{
+    ClientCleanup();
+    ui->connectServerBtn->setEnabled(true);
+    ui->serverIp->setEnabled(true);
+    ui->disconnectServerBtn->setEnabled(false);
+    ui->refreshListBtn->setEnabled(false);
+    ui->sendFileBtn->setEnabled(false);
+    ui->dwldFileBtn->setEnabled(false);
+}
+
+void MainWindow::on_refreshListBtn_clicked()
+{
+    ClientSendRequest(GET_UPDATE_SONG_LIST);
+}
+
 void MainWindow::on_sendFileBtn_clicked()
 {
     QFile *file = new QFile(QFileDialog::getOpenFileName(this, tr("Pick A Song To Send"), 0, tr("Music (*.wav)")));
     if (file->exists())
     {
         file->open(QIODevice::ReadOnly);
-        ClientSend((HANDLE) _get_osfhandle(file->handle()));
     }
+    QFileInfo fileInfo(file->fileName());
+    strcpy(sendFileName, fileInfo.fileName().toLatin1().data());
+    ClientSendRequest(SEND_SONG_TO_SERVER);
 }
 
-void MainWindow::on_requestFileBtn_clicked()
-{
-
-}
-
-void MainWindow::on_connectOutBtn_clicked()
-{
-    if ((sendSockOpen = ClientSendSetup(ui->peerIp->text().toLatin1().data(),
-            sendSock, SERVER_DEFAULT_PORT)) == 0)
-    {
-        ui->connectOutBtn->setEnabled(false);
-        ui->peerIp->setEnabled(false);
-        ui->disconnectOutBtn->setEnabled(true);
-        ui->sendFileBtn->setEnabled(true);
-    }
-}
-
-void MainWindow::on_disconnectOutBtn_clicked()
-{
-    ClientCleanup();
-    ui->connectOutBtn->setEnabled(true);
-    ui->peerIp->setEnabled(true);
-    ui->disconnectOutBtn->setEnabled(false);
-    ui->sendFileBtn->setEnabled(false);
-}
-
-void MainWindow::on_openInBtn_clicked()
-{
-    if ((listenSockOpen = ClientReceiveSetup(listenSock, SERVER_DEFAULT_PORT, acceptEvent)) == 0)
-    {
-        QFile *file = new QFile(QFileDialog::getSaveFileName(this, tr("Save song as"), 0, tr("Music (*.wav)")));
-        if (file->fileName() != NULL)
-        {
-            ui->openInBtn->setEnabled(false);
-            ui->closeInBtn->setEnabled(true);
-            file->open(QIODevice::WriteOnly);
-            ClientListen((HANDLE) _get_osfhandle(file->handle()));
-        } else
-        {
-            ClientCleanup();
-        }
-    }
-}
-
-void MainWindow::on_closeInBtn_clicked()
-{
-    ui->openInBtn->setEnabled(true);
-    ui->closeInBtn->setEnabled(false);
-    ClientCleanup();
-}
-
-// ---- Radio Streaming Functions ----
-
-void MainWindow::on_connectServerBtn_clicked()
+void MainWindow::on_dwldFileBtn_clicked()
 {
 
 }
@@ -210,7 +193,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    audio->start(microphoneBuffer);
    audioManager->playRecord();
 
-   p2pSendSockOpen = ClientSendSetup(ui->peerVoiceIp->text().toLatin1().data(),
+   p2pSendSockClosed = ClientSendSetup(ui->peerVoiceIp->text().toLatin1().data(),
                                         p2pSendSock, P2P_DEFAULT_PORT);
    ClientSendMicrophoneData();
 }
@@ -257,10 +240,4 @@ void MainWindow::on_stopRecordBtn_clicked()
     audioManager->playRecord();
     //dFile.close();
     //delete audio;
-}
-
-
-void MainWindow::on_refreshList_clicked()
-{
-    ClientSendRequest(GET_UPDATE_SONG_LIST);
 }
