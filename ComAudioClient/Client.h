@@ -31,7 +31,6 @@ int ClientReceiveSetupP2P();
 int ClientListenP2P();
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
-DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter);
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 
 ///////////////////// Macros //////////////////////////////

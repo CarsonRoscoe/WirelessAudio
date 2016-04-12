@@ -28,14 +28,23 @@ bool CircularBuffer::pushBack(void* item) {
     return true;
 }
 
+//char global[8192];
 bool CircularBuffer::pop(QBuffer* buf) {
-    if (length == 0) {
+    if (length < 1) {
         return false;
     }
 
     qint64 curPos = buf->pos();
     buf->seek(buf->size());
-    buf->write((const char *)back, BUFFERSIZE);
+    //strcpy(global, (const char *)back);
+    //buf->write(global, elementLength);
+    try {
+        buf->write((const char *)back, elementLength);
+    } catch (int e) {
+        qDebug() << "Errorrr";
+        return false;
+    }
+
     buf->seek(curPos);
     qDebug() << buf->size();
 
@@ -74,7 +83,7 @@ bool CircularBuffer::pop(QBuffer* buf) {
 --      copying it to the char array passed in
 ---------------------------------------------------------------------------------------*/
 bool CircularBuffer::pop(char dest[]) {
-    if (length == 0) {
+    if (length < 1) {
         return false;
     }
 

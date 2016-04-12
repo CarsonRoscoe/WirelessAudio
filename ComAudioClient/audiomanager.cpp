@@ -5,13 +5,13 @@ AudioManager::AudioManager(QObject * par) {
     parent = par;
 }
 
-void AudioManager::Init(QBuffer * buf) {
+void AudioManager::Init(QBuffer * buf, CircularBuffer * circ) {
     songState = Stopped;
-    circularBuffer = new CircularBuffer(CIRCULARBUFFERSIZE, BUFFERSIZE, parent);
+    circularBuffer = circ;
     buffer = buf;
     qRegisterMetaType<wav_hdr>("wav_hdr");
 
-    populateBufferWorker = new PopulateBufferWorker(circularBuffer, buffer);
+    populateBufferWorker = new PopulateBufferWorker(circ, buf);
     populateBufferWorker->moveToThread(&populateBufferThread);
     connect(&populateBufferThread, SIGNAL(started()), populateBufferWorker, SLOT(doWork()));
     connect(&populateBufferThread, &QThread::finished, populateBufferWorker, &QObject::deleteLater);

@@ -30,15 +30,16 @@ MainWindow::MainWindow(QWidget *parent) :
 
     isRecording = false;
     isPlaying = false;
-    audioManager = new AudioManager(this);
     microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
-    audioManager->Init(listeningBuffer);
-   // ClientReceiveSetupP2P();
-    //ClientListenP2P();
-
+    listeningBuffer->open(QIODevice::ReadWrite);
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
+    audioManager = new AudioManager(this);
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
+    audioManager->Init(listeningBuffer, circularBufferRecv);
+    ClientReceiveSetupP2P();
+    ClientListenP2P();
+
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
     QValidator* val = new QRegExpValidator(regex, this);
@@ -193,7 +194,6 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
     dFile.open( QIODevice::ReadWrite);
 
    microphoneBuffer->open( QIODevice::ReadWrite);
-   listeningBuffer->open(QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
    format.setSampleRate(16000);
@@ -219,7 +219,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
    audioFile->start(&dFile);
-   //ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
+   ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
 

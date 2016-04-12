@@ -446,11 +446,6 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
         }
     }
 
-    if ((hThread = CreateThread(NULL, 0, ClientWriteToFileThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
-        qDebug() << "Create ServerWriteToFileThread failed with error " << GetLastError();
-        return FALSE;
-    }
-
     SleepEx(10000, true);
 
     return TRUE;
@@ -538,8 +533,7 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 }
 
 //Carson, designed by Micah
-void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
-                                LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
+void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
     p2pSI = (LPSOCKET_INFORMATION)Overlapped;
@@ -557,9 +551,8 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         return;
     }
 
-    char slotsize[SERVER_PACKET_SIZE];
-    sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
+    qDebug() <<"Transfered:" << BytesTransferred;
+    if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
         qDebug() << "Writing received packet to circular buffer failed";
 
     Flags = 0;
@@ -579,53 +572,6 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
     }
 
 }
-
-//Carson, designed by Micah
-DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
-
-    QString filename = "RecordBufferdata.txt";
-    QFile file(filename);
-    file.open(QIODevice::ReadWrite);
-    QTextStream stream(&file);
-    char sizeBuf[SERVER_PACKET_SIZE];
-    char writeBuf[SERVER_PACKET_SIZE];
-    int packetSize;
-    bool lastPacket = false;
-
-    qDebug() << "Enter ClientWriteToFileP2P";
-    while(!lastPacket) {
-        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0) {
-            circularBufferRecv->pop(sizeBuf);
-            sizeBuf[5] = '\0';
-            packetSize = strtol(sizeBuf, NULL, 10);
-            circularBufferRecv->pop(writeBuf);
-            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
-                 a < packetSize - 5; a++, b++, c++, d++, e++)
-            {
-                if (writeBuf[a] == 'm' && writeBuf[a+1] == 'i' && writeBuf[a+2]=='l' && writeBuf[a+3]=='e' && writeBuf[a+4]=='d') {
-                                    packetSize = a - 1;
-#ifdef DEBUG_MODE
-                                    qDebug() << "Last packet";
-#endif
-                                   break;
-
-                }
-            }
-
-            int cur = listeningBuffer->pos();
-            int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
-            listeningBuffer->seek(newpos);
-            listeningBuffer->write(writeBuf, packetSize);
-            listeningBuffer->write(writeBuf, packetSize);
-            for(int i =0; i < packetSize;i++){
-                stream <<writeBuf[i];
-            }
-            listeningBuffer->seek(cur);
-        }
-    }
-    return TRUE;
-}
-
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientWriteToFileThread
