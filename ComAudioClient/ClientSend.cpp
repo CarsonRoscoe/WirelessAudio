@@ -287,47 +287,47 @@ void ClientCleanup()
     if (!sendSockClosed)
     {
         closesocket(sendSock);
-        sendSockClosed = -1;
+        sendSockClosed = 1;
     }
     if (!listenSockClosed)
     {
         closesocket(listenSockClosed);
-        listenSockClosed = -1;
+        listenSockClosed = 1;
     }
     if (!acceptSockClosed)
     {
         closesocket(acceptSock);
-        acceptSockClosed = -1;
+        acceptSockClosed = 1;
     }
     if (!p2pListenSockClosed)
     {
         closesocket(p2pListenSock);
-        p2pListenSockClosed = -1;
+        p2pListenSockClosed = 1;
     }
     if (!p2pAcceptSockClosed)
     {
         closesocket(p2pAcceptSock);
-        p2pAcceptSockClosed = -1;
+        p2pAcceptSockClosed = 1;
     }
     if (!p2pSendSockClosed)
     {
         closesocket(p2pSendSock);
-        p2pSendSockClosed = -1;
+        p2pSendSockClosed = 1;
     }
     if (!controlSockClosed)
     {
         closesocket(controlSock);
-        controlSockClosed = -1;
+        controlSockClosed = 1;
     }
-    if (hSendClosed)
+    if (!hSendClosed)
     {
         closesocket(sendSock);
-        hSendClosed = false;
+        hSendClosed = 1;
     }
-    if (hReceiveClosed)
+    if (!hReceiveClosed)
     {
         CloseHandle(hReceiveFile);
-        hReceiveClosed = false;
+        hReceiveClosed = 1;
     }
     WSACleanup();
 }
