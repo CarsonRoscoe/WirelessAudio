@@ -96,7 +96,7 @@ void MainWindow::on_playPauseBtn_clicked()
 
 void MainWindow::on_resumeBtn_clicked()
 {
-    audioManager->resume();
+    //audioManager->resume();
 }
 
 void MainWindow::on_skipFwdBtn_clicked()
@@ -112,7 +112,7 @@ void MainWindow::on_skipBkwdBtn_clicked()
 
 void MainWindow::on_nextSongBtn_clicked()
 {
-
+ //audio->reset(microphoneBuffer);
 }
 
 void MainWindow::on_prevSongBtn_clicked()
