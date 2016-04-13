@@ -5,6 +5,7 @@
 #include <QFile>
 #include "circularbuffer.h"
 #include "wavheader.h"
+#include <QDebug>
 
 class ReadFileWorker : public QObject {
     Q_OBJECT

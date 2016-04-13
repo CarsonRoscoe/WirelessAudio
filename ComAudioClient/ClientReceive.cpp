@@ -33,6 +33,8 @@
 #include <QString>
 #include <QBuffer>
 #include "Client.h"
+#include <QFile>
+#include <QTextStream>
 
 ////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
@@ -41,6 +43,8 @@ WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
 bool hReceiveOpen;
 LPSOCKET_INFORMATION SI, p2pSI;
+
+
 
 //Carson, designed by Micah
 int ClientReceiveSetupP2P() {
@@ -271,13 +275,11 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
         return FALSE;
     }
 
-    while (TRUE) {
-        p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
-        qDebug() << "P2P Accepted a request";
-        if (WSASetEvent(p2pAcceptEvent) == FALSE) {
-            qDebug() << "WSASetEvent failed with error " << WSAGetLastError();
-            return FALSE;
-        }
+    p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
+    qDebug() << "P2P Accepted a request";
+    if (WSASetEvent(p2pAcceptEvent) == FALSE) {
+        qDebug() << "WSASetEvent failed with error " << WSAGetLastError();
+        return FALSE;
     }
 
     return TRUE;
@@ -435,16 +437,12 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
 
     Flags = 0;
     // TCP WSA receive
+
     if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, &(SocketInfo->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return FALSE;
         }
-    }
-
-    if ((hThread = CreateThread(NULL, 0, ClientWriteToFileThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
-        qDebug() << "Create ServerWriteToFileThread failed with error " << GetLastError();
-        return FALSE;
     }
 
     SleepEx(10000, true);
@@ -533,12 +531,29 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
+void CleanupP2P() {
+    GlobalFree(p2pSI);
+    closesocket(p2pListenSock);
+    closesocket(p2pAcceptSock);
+    p2pListenSockOpen = false;
+    p2pAcceptSockOpen = false;
+    listeningBuffer->buffer().clear();
+    listeningBuffer->buffer().resize(0);
+    listeningBuffer->close();
+    listeningBuffer->setBuffer(new QByteArray());
+    listeningBuffer->seek(listeningBuffer->size());
+    listeningBuffer->open(QIODevice::ReadWrite);
+    qDebug()<<"Socket Closed";
+    isRecording = false;
+    ClientReceiveSetupP2P();
+    ClientListenP2P();
+}
+
 //Carson, designed by Micah
-void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
-                                LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
+void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
-    p2pSI = (LPSOCKET_INFORMATION)Overlapped;
+    LPSOCKET_INFORMATION p2pSI = (LPSOCKET_INFORMATION)Overlapped;
 
     if (Error != 0)
         qDebug() << "I/O operation failed with error " << Error;
@@ -552,98 +567,44 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         GlobalFree(p2pSI);
         return;
     }
+      if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
+          qDebug() << "error pushing back CR " << p2pSI->Socket;
+        Flags = 0;
+   /* ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
+    if (listeningBuffer->size() > 1200000) {
+        listeningBuffer->buffer().resize(0);
+        listeningBuffer->seek(0);
+        listeningBuffer->open(QIODevice::ReadWrite);
+        ClientListenP2P();
+        return;
+    } else {
+        qDebug() << listeningBuffer->size();
+    }
 
-    char slotsize[SERVER_PACKET_SIZE];
-    sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
+    if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
         qDebug() << "Writing received packet to circular buffer failed";
 
     Flags = 0;
     ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
-
     p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
-    p2pSI->DataBuf.buf = p2pSI->Buffer;
+    p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
-    SleepEx(1, true);
-    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+    //SleepEx(10, true);
+    if(packetcounter==10){
+       // CleanupP2P();
+       // packetcounter = 0;
+        //return;
+    }
+
+    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
         } else {
-            SleepEx(10000, true);
+            SleepEx(1000, true);
         }
-    }
-
+   }
 }
-
-//Carson, designed by Micah
-DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
-    char sizeBuf[SERVER_PACKET_SIZE];
-    char writeBuf[SERVER_PACKET_SIZE];
-    int packetSize;
-    bool lastPacket = false;
-
-    qDebug() << "Enter ClientWriteToFileP2P";
-    while(!lastPacket) {
-        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0) {
-            circularBufferRecv->pop(sizeBuf);
-            sizeBuf[5] = '\0';
-            packetSize = strtol(sizeBuf, NULL, 10);
-            circularBufferRecv->pop(writeBuf);
-            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
-                 a < packetSize - 5; a++, b++, c++, d++, e++)
-            {
-                if (writeBuf[a] == 'm') {
-                    if (writeBuf[b] == 'i') {
-                        if (writeBuf[c] == 'l') {
-                            if (writeBuf[d] == 'e') {
-                                if (writeBuf[e] == 'd') {
-                                    packetSize = a - 1;
-#ifdef DEBUG_MODE
-                                    qDebug() << "Last packet";
-#endif
-                                    break;
-                                } else {
-                                    a += 4;
-                                    b += 4;
-                                    c += 4;
-                                    d += 4;
-                                    e += 4;
-                                }
-                            } else {
-                                a += 3;
-                                b += 3;
-                                c += 3;
-                                d += 3;
-                                e += 3;
-                            }
-                        } else {
-                            a += 2;
-                            b += 2;
-                            c += 2;
-                            d += 2;
-                            e += 2;
-                        }
-                    } else {
-                        a++;
-                        b++;
-                        c++;
-                        d++;
-                        e++;
-                    }
-                }
-            }
-
-            int cur = listeningBuffer->pos();
-            int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
-            listeningBuffer->seek(newpos);
-            listeningBuffer->write(writeBuf, packetSize);
-            listeningBuffer->seek(cur);
-        }
-    }
-    return TRUE;
-}
-
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientWriteToFileThread

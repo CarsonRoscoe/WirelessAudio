@@ -19,7 +19,8 @@ SOURCES += main.cpp\
     ClientReceive.cpp \
     ClientSend.cpp \
     populatebufferworker.cpp \
-    readfileworker.cpp
+    readfileworker.cpp \
+    populatemicrophoneworker.cpp
 
 HEADERS  += mainwindow.h \
     audiomanager.h \
@@ -28,7 +29,8 @@ HEADERS  += mainwindow.h \
     populatebufferworker.h \
     readfileworker.h \
     songstate.h \
-    wavheader.h
+    wavheader.h \
+    populatemicrophoneworker.h
 
 FORMS    += mainwindow.ui
 

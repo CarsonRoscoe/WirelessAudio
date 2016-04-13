@@ -4,7 +4,11 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "circularbuffer.h"
+#include "audiomanager.h"
 #include <QBuffer>
+#include <iostream>
+#include <fstream>
+#include <QAudioInput>
 
 ///////////////////// Global Prototypes ///////////////////
 // Sending Prototypes
@@ -28,19 +32,19 @@ int ClientSendSetupP2P(char* addr);
 int ClientSendMicrophoneData();
 int ClientReceiveSetupP2P();
 int ClientListenP2P();
+void CleanupP2P();
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
-DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter);
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
-
+void CALLBACK ClientCallbackP2P2(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 ///////////////////// Macros //////////////////////////////
 #define SERVER_DEFAULT_PORT 7001
 #define CLIENT_DEFAULT_PORT 7002
 #define P2P_DEFAULT_PORT    7003
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
-#define CLIENT_PACKET_SIZE  8192
-#define SERVER_PACKET_SIZE  8192
+#define CLIENT_PACKET_SIZE  25600
+#define SERVER_PACKET_SIZE  25600
 
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
@@ -60,6 +64,7 @@ extern struct sockaddr_in server, otherClient;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
+extern CircularBuffer * micBuf;
 // Receiving
 extern SOCKET listenSock, acceptSock;
 extern bool listenSockOpen, acceptSockOpen;
@@ -68,5 +73,8 @@ extern HANDLE hReceiveFile;
 extern bool hReceiveOpen;
 extern LPSOCKET_INFORMATION SI, p2pSI;
 extern CircularBuffer* circularBufferRecv;
+
+extern QAudioInput * audio;
+extern int packetcounter;
 
 #endif
