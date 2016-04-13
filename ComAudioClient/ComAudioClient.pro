@@ -18,21 +18,25 @@ SOURCES += main.cpp\
     circularbuffer.cpp \
     ClientReceive.cpp \
     ClientSend.cpp \
-    populatebufferworker.cpp \
-    readfileworker.cpp \
     clientudp.cpp \
+    populatebufferworker.cpp \
+    populatemicrophoneworker.cpp \
+    readfileworker.cpp \
     udpthread.cpp
+
 
 HEADERS  += mainwindow.h \
     audiomanager.h \
     circularbuffer.h \
     Client.h \
+    clientudp.h \
     populatebufferworker.h \
+    populatemicrophoneworker.h \
     readfileworker.h \
     songstate.h \
-    wavheader.h \
-    clientudp.h \
-    udpthread.h
+    udpthread.h \
+    wavheader.h
+
 
 FORMS    += mainwindow.ui
 

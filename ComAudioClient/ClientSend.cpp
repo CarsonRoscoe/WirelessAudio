@@ -32,7 +32,8 @@
 #include <stdio.h>
 #include <QDebug>
 #include "Client.h"
-
+#include <QFile>
+#include <QTextStream>
 //#pragma comment(lib, "Ws2_32.lib")
 
 ////////// "Real" of the externs in Client.h ///////////////
@@ -47,7 +48,7 @@ HANDLE hSendFile;
 bool hSendOpen;
 
 //////////////////// Debug vars ///////////////////////////
-#define DEBUG_MODE
+//#define DEBUG_MODE
 int totalbytessent;
 
 /*---------------------------------------------------------------------------------------
@@ -166,7 +167,7 @@ int ClientSendSetupP2P(char* addr) {
 
     qDebug () << "Attempting to accept request to ip " << p2pAddress << " on port " << P2P_DEFAULT_PORT;
 
-    // TCP Connecting to the server
+    // TCP Connecting to the  server
     if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
         ShowLastErr(true);
         qDebug() << "Can't connect to server";
@@ -219,36 +220,38 @@ int ClientSend(HANDLE hFile)
 //Written by Carson, designed by Micah since it follows her other thread design
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     hSendFile = (HANDLE) lpParameter;
-    char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    //char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    char sendbuff[CLIENT_PACKET_SIZE]= { '\0'};
     DWORD  dwBytesRead;
     int sentBytes = 0;
-
+    //memset(sendbuff,'\0',sizeof(sendbuff));
+     memset(sendbuff,'\0',sizeof(sendbuff));
+    QString filename = "RecordBufferdata2.txt";
+    QFile file(filename);
+    if(!file.open(QIODevice::ReadWrite)){
+        qDebug()<< "Error, File didn't open";
+    }
+    QTextStream stream(&file);
     while (isRecording) {
-        microphoneBuffer->seek(0);
-        dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE);
-
-        if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
+        if (!micBuf->pop(sendbuff)) {
+           continue;
+        }
+        //file.write(sendbuff, CLIENT_PACKET_SIZE);
+        /*if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
         {
+            //stream<<sendbuff;
+
             sendbuff[dwBytesRead] = 'm';
             sendbuff[dwBytesRead+1] = 'i';
             sendbuff[dwBytesRead+2] = 'l';
             sendbuff[dwBytesRead+3] = 'e';
             sendbuff[dwBytesRead+4] = 'd';
-
-        }
-        if (microphoneBuffer->size() > 0)
-        {
-            microphoneBuffer->seek(microphoneBuffer->size()-1);
-        }
-
+             //qDebug() << "Reading stuff";
+        }*/
         sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-#ifdef DEBUG_MODE
-        qDebug() << "\nRecorded bytes:" << dwBytesRead;
-        qDebug() << "Sent bytes:" << sentBytes;
-#endif
     }
 
-    sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+    //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
 
     return TRUE;
 }

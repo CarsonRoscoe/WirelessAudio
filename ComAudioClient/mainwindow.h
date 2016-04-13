@@ -4,7 +4,10 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QFileDialog>
+#include <QThread>
 #include "audiomanager.h"
+#include "populatemicrophoneworker.h"
+
 
 namespace Ui {
 class MainWindow;
@@ -53,8 +56,11 @@ private slots:
 
     void on_closeInBtn_clicked();
 
+    void cleanupp2p();
 private:
     Ui::MainWindow *ui;
+    PopulateMicrophoneWorker *microphoneWorker;
+    QThread microphoneThread;
     AudioManager *audioManager;
 
     void get_local_files();

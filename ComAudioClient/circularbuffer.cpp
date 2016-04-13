@@ -1,6 +1,7 @@
 #include "circularbuffer.h"
 #include <QDebug>
-
+#include <QTimer>
+int packetcounter =0;
 CircularBuffer::CircularBuffer(int maxLength, int elementLength, QObject* par) : parent(par) {
     buffer = malloc(maxLength* elementLength);
     if (buffer == NULL) {
@@ -19,6 +20,10 @@ CircularBuffer::~CircularBuffer() {
 }
 
 bool CircularBuffer::pushBack(void* item) {
+    if (length == maxLength) {
+        return false;
+    }
+
     memcpy(front, item, elementLength);
     front = (char*)front + elementLength;
     if (front == bufferEnd) {
@@ -28,16 +33,31 @@ bool CircularBuffer::pushBack(void* item) {
     return true;
 }
 
+//char global[8192];
 bool CircularBuffer::pop(QBuffer* buf) {
-    if (length == 0) {
+    if (length < 1) {
         return false;
     }
 
     qint64 curPos = buf->pos();
     buf->seek(buf->size());
-    buf->write((const char *)back, BUFFERSIZE);
+    //strcpy(global, (const char *)back);
+    //buf->write(global, elementLength);
+    try {
+        buf->write((const char *)back, elementLength);
+    } catch (int e) {
+        qDebug() << "Errorrr";
+        return false;
+    }
+    packetcounter++;
+
     buf->seek(curPos);
-    qDebug() << buf->size();
+
+    qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
+    qDebug()<<"Packets Sent:"<< packetcounter;
+
+    //qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
+
 
     back = (char*)back + elementLength;
     if (back == bufferEnd) {
@@ -74,7 +94,7 @@ bool CircularBuffer::pop(QBuffer* buf) {
 --      copying it to the char array passed in
 ---------------------------------------------------------------------------------------*/
 bool CircularBuffer::pop(char dest[]) {
-    if (length == 0) {
+    if (length < 1) {
         return false;
     }
 
