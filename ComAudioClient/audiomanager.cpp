@@ -58,7 +58,7 @@ void AudioManager::playRecord() {
     QAudioFormat formatRecord;
     // Set up the desired format, for example:
 
-    formatRecord.setSampleRate(8000);
+    formatRecord.setSampleRate(15000);
     formatRecord.setChannelCount(1);
     formatRecord.setSampleSize(16);
 

@@ -32,6 +32,7 @@ int ClientSendSetupP2P(char* addr);
 int ClientSendMicrophoneData();
 int ClientReceiveSetupP2P();
 int ClientListenP2P();
+void CleanupP2P();
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
@@ -42,8 +43,8 @@ void CALLBACK ClientCallbackP2P2(DWORD Error, DWORD BytesTransferred, LPWSAOVERL
 #define P2P_DEFAULT_PORT    7003
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
-#define CLIENT_PACKET_SIZE  4096
-#define SERVER_PACKET_SIZE  4096
+#define CLIENT_PACKET_SIZE  25600
+#define SERVER_PACKET_SIZE  25600
 
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
