@@ -12,10 +12,8 @@ void PopulateBufferWorker::doWork() {
     buffer->open(QIODevice::ReadWrite);
     qDebug() << "PopulateBufferWorker doWork Enter";
     while(true) {
-        if(circularBuffer->pop(buffer)){
-        qDebug() << "poppacket"<<poppacket;
-         poppacket++;
-        }
+        if(circularBuffer->pop(buffer))
+            poppacket++;
     }
     qDebug() << "PopulateBufferWorker doWork Exit";
     buffer->close();
