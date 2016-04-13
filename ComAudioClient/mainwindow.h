@@ -8,6 +8,9 @@
 #include "audiomanager.h"
 #include "populatemicrophoneworker.h"
 
+enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
+
+extern ProgramState CurrentState;
 
 namespace Ui {
 class MainWindow;
@@ -57,6 +60,10 @@ private slots:
     void on_closeInBtn_clicked();
 
     void cleanupp2p();
+
+    void on_tabWidget_currentChanged(int index);
+
+
 private:
     Ui::MainWindow *ui;
     PopulateMicrophoneWorker *microphoneWorker;

@@ -43,7 +43,7 @@ WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
 bool hReceiveOpen;
 LPSOCKET_INFORMATION SI, p2pSI;
-
+bool start;
 
 
 //Carson, designed by Micah
@@ -51,6 +51,8 @@ int ClientReceiveSetupP2P() {
     int ret;
     WSADATA wsaData;
     SOCKADDR_IN InternetAddr;
+
+    start = false;
 
     if ((ret = WSAStartup(0x0202, &wsaData)) != 0) {
         qDebug() << "WSAStartup failed with error " << ret;
@@ -543,10 +545,8 @@ void CleanupP2P() {
     listeningBuffer->setBuffer(new QByteArray());
     listeningBuffer->seek(listeningBuffer->size());
     listeningBuffer->open(QIODevice::ReadWrite);
-    qDebug()<<"Socket Closed";
     isRecording = false;
-    ClientReceiveSetupP2P();
-    ClientListenP2P();
+    qDebug()<<"CleanupP2P invoked";
 }
 
 //Carson, designed by Micah
@@ -570,6 +570,11 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
       if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
           qDebug() << "error pushing back CR " << p2pSI->Socket;
         Flags = 0;
+
+     if (!start) {
+        startP2PAudio = true;
+        start = true;
+     }
    /* ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
     if (listeningBuffer->size() > 1200000) {
         listeningBuffer->buffer().resize(0);
@@ -590,10 +595,12 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
     //SleepEx(10, true);
-    if(packetcounter==10){
-       // CleanupP2P();
-       // packetcounter = 0;
-        //return;
+    if(packetcounter==146){
+        CleanupP2P();
+        ClientReceiveSetupP2P();
+        ClientListenP2P();
+        packetcounter = 0;
+        return;
     }
 
     if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {

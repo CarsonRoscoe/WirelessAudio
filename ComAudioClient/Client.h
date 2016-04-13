@@ -5,6 +5,7 @@
 #include <windows.h>
 #include "circularbuffer.h"
 #include "audiomanager.h"
+#include "win32communicationworker.h"
 #include <QBuffer>
 #include <iostream>
 #include <fstream>

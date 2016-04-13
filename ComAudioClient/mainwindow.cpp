@@ -12,7 +12,7 @@
 #include <QDataStream>
 
 QFile dFile;
-QAudioInput * audio;
+QAudioInput * audio = NULL;
 QPalette palette;
 
 //QAudioInput * audioFile;
@@ -24,6 +24,7 @@ bool isPlaying;
 QByteArray byteArray;
 int curpos=0;
 AudioManager *audioManager;
+ProgramState CurrentState = MediaPlayer;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -158,8 +159,7 @@ void MainWindow::on_resumeBtn_clicked()
 
 void MainWindow::on_skipFwdBtn_clicked()
 {
-    //audioManager->skip(10);
-    audioManager->playRecord();
+    audioManager->skip(10);
 }
 
 void MainWindow::on_skipBkwdBtn_clicked()
@@ -357,3 +357,35 @@ void MainWindow::cleanupp2p()
         }
     }
 }*/
+
+void MainWindow::on_tabWidget_currentChanged(int index)
+{
+    //enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
+    switch(CurrentState) {
+    case MediaPlayer:
+        //Invoke MediaPlayer cleanup
+        break;
+     case FileTransfer:
+        //Invoke FileTransfer cleanup
+        break;
+     case Radio:
+        //Invoke Radio cleanup
+        break;
+     case VoiceChat:
+        //Invoke VoiceChat cleanup
+        CleanupP2P();
+        if (audio != NULL) {
+            audio->reset();
+            audio->stop();
+            delete audio;
+            audio = NULL;
+        }
+        ClientReceiveSetupP2P();
+        ClientListenP2P();
+        break;
+    default:
+        qDebug()<<"This state should never happen?";
+    }
+
+    CurrentState = static_cast<ProgramState>(index);
+}

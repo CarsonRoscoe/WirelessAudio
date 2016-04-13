@@ -3,6 +3,13 @@
 //Carson
 AudioManager::AudioManager(QObject * par) {
     parent = par;
+
+    win32CommunicationWorker = new Win32CommunicationWorker();
+    win32CommunicationWorker->moveToThread(&win32CommunicationThread);
+    connect(&win32CommunicationThread, &QThread::finished, win32CommunicationWorker, &QObject::deleteLater);
+    connect(&win32CommunicationThread, SIGNAL(started()), win32CommunicationWorker, SLOT(doWork()));
+    connect(win32CommunicationWorker, SIGNAL(playLoad()), this, SLOT(playRecord()));
+    win32CommunicationThread.start();
 }
 
 void AudioManager::Init(QBuffer * buf, CircularBuffer * circ) {
