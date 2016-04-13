@@ -3,6 +3,8 @@
 #include "server.h"
 
 #include "serverudp.h"
+#include "readfileworker.h"
+#include "circularbuffer.h"
 
 #include <QDebug>
 #include <QFileDialog>
@@ -11,6 +13,7 @@
 ServerUDP udpserver;
 
 CircularBuffer *circularBufferRecv;
+CircularBuffer *cb;
 
 DWORD WINAPI send_thread(LPVOID lp_param);
 
@@ -52,6 +55,8 @@ void MainWindow::load_local_files() {
     ui->songList->setCurrentRow(0);
 }
 
+QThread rfw_thread;
+
 void MainWindow::on_startServerBtn_clicked()
 {
     if (!udpserver.init_socket(7000)) {
@@ -61,6 +66,22 @@ void MainWindow::on_startServerBtn_clicked()
     if (!udpserver.init_multicast("234.5.6.7")) {
         qDebug() << "failed to set multicast settings";
     }
+
+    cb = new CircularBuffer(CIRCULARBUFFERSIZE, BUFFERSIZE, this);
+
+    QDir dir(QDir::currentPath());
+    if (!dir.cd("../AudioFiles")) {
+        qWarning() << "Can't find /AudioFiles directory!";
+    }
+
+    QFile *file = new QFile(dir.absoluteFilePath("classical_bach.wav"));
+    ReadFileWorker *rfw = new ReadFileWorker(file, cb);
+
+    rfw->moveToThread(&rfw_thread);
+    connect(&rfw_thread, &QThread::finished, rfw, &QObject::deleteLater);
+    connect(&rfw_thread, SIGNAL(started()), rfw, SLOT(doWork()));
+
+    rfw_thread.start();
 
     DWORD thread_id;
     if (CreateThread(NULL, 0, send_thread, (LPVOID) &udpserver, 0, &thread_id) == NULL) {
@@ -72,19 +93,42 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
     qDebug() << "thread created";
 
     ServerUDP* serv = (ServerUDP*)lp_param;
-    DWORD bytes_to_send = 10;
+    DWORD bytes_to_send = 1000;
+    DWORD total = 0;
 
-    char ** msg = (char**) malloc(sizeof(char*));
-
-    *msg = "123456789";
+    char message[1000] = { '\0' };
+    memset(message, '\0', sizeof(message));
 
     while (1) {
-        // if there is stuff to send
-
-        if (!serv->broadcast_message(*msg, &bytes_to_send)) {
-            qDebug() << "broadcast failed";
+        if (!cb->pop(message)) {
+            qDebug() << "couldn't pop off cb";
         }
-        Sleep(1000);
+
+        if (!serv->broadcast_message(message, &bytes_to_send)) {
+            qDebug() << "broadcase message failed";
+        }
+
+//        if (cb->length > 0) {
+//            total = cb->length;`
+//            bytes_to_send = total;
+//        }
+
+//        if (total > 0) {
+
+//            if (bytes_to_send > 40000) {
+//                bytes_to_send = 40000;
+//            }
+
+//            cb->pop(msg);
+
+//            if (!serv->broadcast_message(msg, &bytes_to_send)) {
+//                qDebug() << "broadcast failed";
+//            }
+
+//            total -= bytes_to_send;
+//        }
+
+//        Sleep(1000);
     }
 }
 void MainWindow::on_startBroadcastBtn_clicked()

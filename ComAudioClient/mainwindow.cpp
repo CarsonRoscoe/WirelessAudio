@@ -241,6 +241,7 @@ void MainWindow::on_connectServerBtn_clicked()
     udp_thread->moveToThread(multicastThread);
 
     //connect(sender, signal, receiver, method, ConnectionType)
+    // TODO: use unique connection...
     connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()));
     connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()));
     connect(udp_thread, SIGNAL(finished()), multicastThread, SLOT(quit()), Qt::DirectConnection);
