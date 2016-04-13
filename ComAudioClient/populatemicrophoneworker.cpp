@@ -11,18 +11,22 @@ void PopulateMicrophoneWorker::doWork() {
     qDebug() << "PopulateMicrophoneWorker doWork Enter";
     while(true) {
        while (buffer->size() >= pos + SERVER_PACKET_SIZE ) {
-            SendPacket++;
-            char tempbuff[SERVER_PACKET_SIZE];
-            int curPos = buffer->pos();
-            buffer->seek(pos);
-            buffer->read(tempbuff, SERVER_PACKET_SIZE);
-            buffer->seek(curPos);
-            pos += SERVER_PACKET_SIZE;
-            //qDebug()<<"actual pos" << pos;
-            circularBuffer->pushBack(tempbuff);
-            qDebug() << buffer->size() << pos;
+                           qDebug()<<buffer->bytesAvailable();
+           // if(buffer->bytesAvailable()>=SERVER_PACKET_SIZE){
+                SendPacket++;
+                char tempbuff[SERVER_PACKET_SIZE];
+                int curPos = buffer->pos();
+                buffer->seek(pos);
+                buffer->read(tempbuff, SERVER_PACKET_SIZE);
+                buffer->seek(curPos);
+                pos += SERVER_PACKET_SIZE;
+                //qDebug()<<"actual pos" << pos;
+                circularBuffer->pushBack(tempbuff);
+                qDebug() << buffer->size() << pos;
+           // }
+          //  else
         }
-        if (microphoneBuffer->size() > 1200000 ) {
+        /*if (microphoneBuffer->size() > 1200000 ) {
             SendPacket++;
             microphoneBuffer->buffer().resize(0);
             microphoneBuffer->buffer().reserve(10000000);
@@ -32,7 +36,7 @@ void PopulateMicrophoneWorker::doWork() {
             //SendPacket=0;
             //isRecording = false;
             //return;
-        }
+        }*/
     }
     qDebug() << "PopulateMicrophoneWorker doWork Exit";
     //buffer->close();
