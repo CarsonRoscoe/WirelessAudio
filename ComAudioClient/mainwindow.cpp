@@ -32,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent) :
     isRecording = false;
     isPlaying = false;
     microphoneBuffer = new QBuffer(parent);
+    microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
     listeningBuffer->open(QIODevice::ReadWrite);
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
@@ -198,11 +199,6 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
-   // byteArray=microphoneBuffer->buffer();
-    //dFile.setFileName("../RecordTest.raw");
-    dFile.open( QIODevice::ReadWrite);
-
-   microphoneBuffer->buffer().reserve(10000000);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:

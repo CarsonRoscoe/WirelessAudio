@@ -11,33 +11,34 @@ void PopulateMicrophoneWorker::doWork() {
     qDebug() << "PopulateMicrophoneWorker doWork Enter";
     while(true) {
        while (buffer->size() >= pos + SERVER_PACKET_SIZE ) {
-                           qDebug()<<buffer->bytesAvailable();
-           // if(buffer->bytesAvailable()>=SERVER_PACKET_SIZE){
-                SendPacket++;
-                char tempbuff[SERVER_PACKET_SIZE];
-                int curPos = buffer->pos();
-                buffer->seek(pos);
-                buffer->read(tempbuff, SERVER_PACKET_SIZE);
-                buffer->seek(curPos);
-                pos += SERVER_PACKET_SIZE;
-                //qDebug()<<"actual pos" << pos;
-                circularBuffer->pushBack(tempbuff);
-                qDebug() << buffer->size() << pos;
+            qDebug()<<buffer->bytesAvailable();
+            // if(buffer->bytesAvailable()>=SERVER_PACKET_SIZE){
+            SendPacket++;
+            char tempbuff[SERVER_PACKET_SIZE];
+            int curPos = buffer->pos();
+            buffer->seek(pos);
+            buffer->read(tempbuff, SERVER_PACKET_SIZE);
+            buffer->seek(curPos);
+            pos += SERVER_PACKET_SIZE;
+            //qDebug()<<"actual pos" << pos;
+            circularBuffer->pushBack(tempbuff);
+            qDebug() << buffer->size() << pos;
            // }
           //  else
         }
-        /*if (microphoneBuffer->size() > 1200000 ) {
-            SendPacket++;
-            microphoneBuffer->buffer().resize(0);
-            microphoneBuffer->buffer().reserve(10000000);
-            microphoneBuffer->seek(0);
-            pos=0;
-            microphoneBuffer->open(QIODevice::ReadWrite);
-            //SendPacket=0;
-            //isRecording = false;
-            //return;
-        }*/
+       /*
+        if (SendPacket == 10) {
+            SendPacket=0;
+            isRecording = false;
+            pos = 0;
+            audio->stop();
+            delete buffer;
+            buffer = new QBuffer();
+            buffer->open(QIODevice::ReadWrite);
+            //buffer->buffer().reserve(2000000);
+            audio->start(buffer);
+        }
+        */
     }
     qDebug() << "PopulateMicrophoneWorker doWork Exit";
-    //buffer->close();
 }

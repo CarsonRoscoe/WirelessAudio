@@ -6,6 +6,8 @@
 #include <QDebug>
 #include "Client.h"
 
+extern QAudioInput * audio;
+
 class PopulateMicrophoneWorker : public QObject
 {
     Q_OBJECT
