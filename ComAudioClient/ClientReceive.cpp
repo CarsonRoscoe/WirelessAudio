@@ -541,9 +541,8 @@ void CleanupP2P() {
     listeningBuffer->buffer().resize(0);
     listeningBuffer->close();
     listeningBuffer->setBuffer(new QByteArray());
-    listeningBuffer->seek(0);
+    listeningBuffer->seek(listeningBuffer->size());
     listeningBuffer->open(QIODevice::ReadWrite);
-    listeningBuffer->seek(0);
     qDebug()<<"Socket Closed";
     isRecording = false;
     ClientReceiveSetupP2P();
@@ -591,11 +590,12 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
     //SleepEx(10, true);
-    //if(packetcounter==146){
-    if(packetcounter==5) {
-        CleanupP2P();
-        return;
+    if(packetcounter==10){
+       // CleanupP2P();
+       // packetcounter = 0;
+        //return;
     }
+
     if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
