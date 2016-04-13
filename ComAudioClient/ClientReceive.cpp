@@ -531,6 +531,25 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
+void CleanupP2P() {
+    GlobalFree(p2pSI);
+    closesocket(p2pListenSock);
+    closesocket(p2pAcceptSock);
+    p2pListenSockOpen = false;
+    p2pAcceptSockOpen = false;
+    listeningBuffer->buffer().clear();
+    listeningBuffer->buffer().resize(0);
+    listeningBuffer->close();
+    listeningBuffer->setBuffer(new QByteArray());
+    listeningBuffer->seek(0);
+    listeningBuffer->open(QIODevice::ReadWrite);
+    listeningBuffer->seek(0);
+    qDebug()<<"Socket Closed";
+    isRecording = false;
+    ClientReceiveSetupP2P();
+    ClientListenP2P();
+}
+
 //Carson, designed by Micah
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
@@ -572,16 +591,9 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
     //SleepEx(10, true);
-    if(packetcounter==146){
-        GlobalFree(p2pSI);
-        closesocket(p2pListenSock);
-        closesocket(p2pAcceptSock);
-        p2pListenSockOpen = false;
-        p2pAcceptSockOpen = false;
-        qDebug()<<"Socket Closed";
-        isRecording = false;
-        ClientReceiveSetupP2P();
-        ClientListenP2P();
+    //if(packetcounter==146){
+    if(packetcounter==5) {
+        CleanupP2P();
         return;
     }
     if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {

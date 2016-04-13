@@ -13,7 +13,7 @@ void PopulateBufferWorker::doWork() {
     qDebug() << "PopulateBufferWorker doWork Enter";
     while(true) {
         if(circularBuffer->pop(buffer)){
-        qDebug() << "poppacket"<<poppacket;
+         qDebug() << "poppacket"<<poppacket;
          poppacket++;
         }
     }
