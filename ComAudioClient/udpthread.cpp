@@ -17,10 +17,12 @@ void UDPThread::receive() {
     while (1) {
 
         // check if header packet (with file type info)
-        // restart circular buffer?
+        // push back on to circular buffer clientUDP.sock_info.Databuf.buf
+        // emit signal indicating song header (process in mainwindow to recreate QAudioOutput)
 
         // if not header packet
-        // append to circular buffer being played from
+        // append to circular buff client.UDP.sock_info.Databuf.buf
+        // emit signal indicating more song data acquired (process in mainwindow)
 
         if (!clientUDP.receive()) {
             qDebug() << "receive failed";

@@ -53,7 +53,7 @@ void AudioManager::receivedWavHeader(wav_hdr wavHeader) {
 }
 
 void AudioManager::playRecord() {
-    qDebug() << "Received Header";
+    qDebug() << "Play Record";
 
     QAudioFormat formatRecord;
     // Set up the desired format, for example:
