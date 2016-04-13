@@ -61,6 +61,10 @@ private:
     Ui::MainWindow *ui;
     PopulateMicrophoneWorker *microphoneWorker;
     QThread microphoneThread;
+    AudioManager *audioManager;
+
+    void get_local_files();
+    QString get_selected_list_item(int tab);
 };
 
 #endif // MAINWINDOW_H
