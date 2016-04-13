@@ -19,7 +19,9 @@ SOURCES += main.cpp\
     ClientReceive.cpp \
     ClientSend.cpp \
     populatebufferworker.cpp \
-    readfileworker.cpp
+    readfileworker.cpp \
+    clientudp.cpp \
+    udpthread.cpp
 
 HEADERS  += mainwindow.h \
     audiomanager.h \
@@ -28,7 +30,9 @@ HEADERS  += mainwindow.h \
     populatebufferworker.h \
     readfileworker.h \
     songstate.h \
-    wavheader.h
+    wavheader.h \
+    clientudp.h \
+    udpthread.h
 
 FORMS    += mainwindow.ui
 

@@ -94,7 +94,7 @@ bool ServerUDP::broadcast_message(char *message, LPDWORD lp_bytes_sent) {
         }
 
         if (WSAWaitForMultipleEvents(1, &sock_info.Overlapped.hEvent, false, INFINITE, false) == WAIT_TIMEOUT) {
-            qDebug() << "UDP WSASendTo() Timeout";
+            qDebug() << "UDP WSASendTo() timeout";
             return false;
         }
     }

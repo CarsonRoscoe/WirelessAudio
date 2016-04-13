@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "Client.h"
+#include "clientudp.h"
+#include "udpthread.h"
 
 #include <QDebug>
 #include <QAudioInput>
@@ -16,6 +18,12 @@ QString lastSong;
 bool isRecording;
 bool isPlaying;
 
+QThread* multicastThread;
+
+UDPThread* udp_thread;
+
+ClientUDP udpclient;
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -25,13 +33,13 @@ MainWindow::MainWindow(QWidget *parent) :
     isPlaying = false;
     lastSong == "";
     audioManager = new AudioManager(this);
-    microphoneBuffer = new QBuffer(parent);
+//    microphoneBuffer = new QBuffer(parent);
     listeningBuffer = new QBuffer(parent);
     audioManager->Init(listeningBuffer);
-    ClientReceiveSetupP2P();
-    ClientListenP2P();
+//    ClientReceiveSetupP2P();
+//    ClientListenP2P();
 
-    circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
+//    circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
     QValidator* val = new QRegExpValidator(regex, this);
@@ -226,8 +234,21 @@ void MainWindow::on_closeInBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
+    multicastThread = new QThread();
 
+    udp_thread = new UDPThread();
+
+    udp_thread->moveToThread(multicastThread);
+
+    //connect(sender, signal, receiver, method, ConnectionType)
+    connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()));
+    connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()));
+    connect(udp_thread, SIGNAL(finished()), multicastThread, SLOT(quit()), Qt::DirectConnection);
+
+    udp_thread->udp_thread_request();
 }
+
+
 
 // ---- PTP Microphone Chat Functions ----
 

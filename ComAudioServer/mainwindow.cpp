@@ -58,7 +58,7 @@ void MainWindow::on_startServerBtn_clicked()
         qDebug() << "failed to init socket";
     }
 
-    if (!udpserver.init_multicast("255.255.255.255")) {
+    if (!udpserver.init_multicast("234.5.6.7")) {
         qDebug() << "failed to set multicast settings";
     }
 
@@ -76,9 +76,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 
     char ** msg = (char**) malloc(sizeof(char*));
 
-    for (int i = 1; i < 10; i++) {
-        *msg += (char) i;
-    }
+    *msg = "123456789";
 
     while (1) {
         // if there is stuff to send
@@ -89,7 +87,6 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
         Sleep(1000);
     }
 }
-
 void MainWindow::on_startBroadcastBtn_clicked()
 {
 
