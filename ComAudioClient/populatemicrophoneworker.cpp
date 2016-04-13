@@ -26,13 +26,6 @@ void PopulateMicrophoneWorker::doWork() {
             isRecording = false;
             return;
         }
-        /*if (buffer->size() > 2000000 && pos > 180000) {
-            qDebug() << "Resetting";
-            pos = 0;
-            microphoneBuffer->buffer().resize(0);
-            microphoneBuffer->open(QIODevice::ReadWrite);
-            microphoneBuffer->seek(0);
-        }*/
     }
     qDebug() << "PopulateMicrophoneWorker doWork Exit";
     buffer->close();

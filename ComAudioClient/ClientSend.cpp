@@ -167,7 +167,7 @@ int ClientSendSetupP2P(char* addr) {
 
     qDebug () << "Attempting to accept request to ip " << p2pAddress << " on port " << P2P_DEFAULT_PORT;
 
-    // TCP Connecting to the server
+    // TCP Connecting to the  server
     if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
         ShowLastErr(true);
         qDebug() << "Can't connect to server";
