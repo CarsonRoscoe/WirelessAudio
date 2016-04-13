@@ -60,7 +60,7 @@ void AudioManager::playRecord() {
 
     formatRecord.setSampleRate(8000);
     formatRecord.setChannelCount(1);
-    formatRecord.setSampleSize(8);
+    formatRecord.setSampleSize(16);
 
     formatRecord.setCodec("audio/pcm");
     formatRecord.setByteOrder(QAudioFormat::LittleEndian);

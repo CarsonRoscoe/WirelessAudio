@@ -208,7 +208,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    // Set up the desired format, for example:
    format.setSampleRate(8000);
    format.setChannelCount(1);
-   format.setSampleSize(8);
+   format.setSampleSize(16);
    format.setCodec("audio/pcm");
    format.setByteOrder(QAudioFormat::LittleEndian);
    format.setSampleType(QAudioFormat::UnSignedInt);
@@ -246,7 +246,7 @@ void MainWindow::on_recordBtn_clicked()
    // Set up the desired format, for example:
    format.setSampleRate(8000);
    format.setChannelCount(1);
-   format.setSampleSize(8);
+   format.setSampleSize(16);
    format.setCodec("audio/pcm");
    format.setByteOrder(QAudioFormat::LittleEndian);
    format.setSampleType(QAudioFormat::UnSignedInt);
@@ -288,3 +288,20 @@ void MainWindow::cleanupp2p()
 
         qDebug()<<"cleanup";
 }
+/*void MainWindow::StoreToBuffer(){
+    char tempbuff[CLIENT_PACKET_SIZE];
+    //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
+
+    microphoneBuffer->seek(curpos);
+    if(microphoneBuffer->bytesAvailable()>=CLIENT_PACKET_SIZE){
+        int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
+        curpos+=bytes;
+        microphoneBuffer->seek(microphoneBuffer->size()-1);
+        qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
+        qDebug()<<"Push back to buffer her, bytes read:" << bytes;
+
+        if(!micBuf->pushBack(tempbuff)){
+            qDebug()<<"Pushback FAILED";
+        }
+    }
+}*/

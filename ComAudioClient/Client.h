@@ -42,8 +42,8 @@ void CALLBACK ClientCallbackP2P2(DWORD Error, DWORD BytesTransferred, LPWSAOVERL
 #define P2P_DEFAULT_PORT    7003
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
-#define CLIENT_PACKET_SIZE  16000
-#define SERVER_PACKET_SIZE  16000
+#define CLIENT_PACKET_SIZE  4096
+#define SERVER_PACKET_SIZE  4096
 
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
