@@ -1,15 +1,21 @@
 #include "populatebufferworker.h"
 
+int poppacket=0;
+
 PopulateBufferWorker::PopulateBufferWorker(CircularBuffer * circularBuffer, QBuffer * buffer) {
     this->circularBuffer = circularBuffer;
     this->buffer = buffer;
 }
 
 void PopulateBufferWorker::doWork() {
+
     buffer->open(QIODevice::ReadWrite);
     qDebug() << "PopulateBufferWorker doWork Enter";
     while(true) {
-        circularBuffer->pop(buffer);
+        if(circularBuffer->pop(buffer)){
+        qDebug() << "poppacket"<<poppacket;
+         poppacket++;
+        }
     }
     qDebug() << "PopulateBufferWorker doWork Exit";
     buffer->close();

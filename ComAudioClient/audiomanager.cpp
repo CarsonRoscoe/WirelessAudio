@@ -67,6 +67,7 @@ void AudioManager::playRecord() {
     formatRecord.setSampleType(QAudioFormat::UnSignedInt);
 
     audioOutput = new QAudioOutput(formatRecord, parent);
+    audioOutput->setBufferSize(4096 * BUFFERSIZE);
     audioOutput->setVolume(volume);
     songState = Playing;
     buffer->seek(0);
