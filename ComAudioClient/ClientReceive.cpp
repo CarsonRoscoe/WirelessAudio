@@ -572,20 +572,26 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     p2pSI->DataBuf.buf = p2pSI->Buffer;*/
 
     //SleepEx(10, true);
-        if(packetcounter==146){
-            GlobalFree(p2pSI);
-             //closesocket(p2pSI->Socket);
-             //qDebug()<<"Socket Closed";
+    if(packetcounter==146){
+        GlobalFree(p2pSI);
+        closesocket(p2pListenSock);
+        closesocket(p2pAcceptSock);
+        p2pListenSockOpen = false;
+        p2pAcceptSockOpen = false;
+        qDebug()<<"Socket Closed";
+        isRecording = false;
+        ClientReceiveSetupP2P();
+        ClientListenP2P();
+        return;
+    }
+    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+        if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
+            qDebug() << "WSARecv() failed with error " << LastErr;
+            return;
+        } else {
+            SleepEx(1000, true);
         }
-        if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
-            if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
-                qDebug() << "WSARecv() failed with error " << LastErr;
-                return;
-            } else {
-                SleepEx(1000, true);
-            }
-       }
-
+   }
 }
 
 /*---------------------------------------------------------------------------------------
