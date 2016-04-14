@@ -379,9 +379,16 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             audio->stop();
             delete audio;
             audio = NULL;
+
         }
+       /* listeningBuffer->
+        listeningBuffer->reset();
+        listeningBuffer->close();
+        listeningBuffer->open(QIODevice::ReadWrite);
+        */
         ClientReceiveSetupP2P();
         ClientListenP2P();
+
         break;
     default:
         qDebug()<<"This state should never happen?";

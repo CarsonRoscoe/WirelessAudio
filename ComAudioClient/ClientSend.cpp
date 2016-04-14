@@ -132,6 +132,7 @@ int ClientSendSetup(char* addr)
 }
 
 int ClientSendSetupP2P(char* addr) {
+
     WSADATA WSAData;
     WORD wVersionRequested;
     struct hostent	*hp;

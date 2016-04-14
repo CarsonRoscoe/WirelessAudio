@@ -608,7 +608,7 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
         } else {
-            SleepEx(1000, true);
+            SleepEx(25000, true);
         }
    }
 }
