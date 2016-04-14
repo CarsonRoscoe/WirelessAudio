@@ -18,8 +18,7 @@ void PopulateBufferWorker::doWork() {
     qDebug() << "PopulateBufferWorker doWork Enter";
     while(stayAlive) {
         if(stayAlive && circularBuffer->pop(buffer)){
-         qDebug() << "poppacket"<<poppacket;
-         poppacket++;
+            poppacket++;
         }
     }
     qDebug() << "PopulateBufferWorker doWork Exit";

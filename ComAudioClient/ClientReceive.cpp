@@ -727,8 +727,8 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
             }
             if (WriteFile(hReceiveFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
-                qDebug() << "Couldn't write to server file\n";
                 ShowLastErr(false);
+                qDebug() << "Couldn't write to server file\n";
                 return FALSE;
             }
 #ifdef DEBUG_MODE
@@ -738,6 +738,7 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
 #endif
         }
     }
+    qDebug() << "You shouldn't be here";
     CloseHandle(hReceiveFile);
     hReceiveClosed = 1;
     return TRUE;

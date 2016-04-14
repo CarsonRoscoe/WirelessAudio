@@ -203,19 +203,19 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
-//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-//            controlSock, CONTROL_PORT)) == 0)
-//    {
-//        strcpy(address, ui->serverIp->text().toLatin1().data());
-//        ui->connectServerBtn->setEnabled(false);
-//        ui->serverIp->setEnabled(false);
-//        ui->disconnectServerBtn->setEnabled(true);
-//        ui->refreshListBtn->setEnabled(true);
-//        ui->sendFileBtn->setEnabled(true);
-//        ui->dwldFileBtn->setEnabled(true);
-//    }
+    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+            controlSock, CONTROL_PORT)) == 0)
+    {
+        strcpy(address, ui->serverIp->text().toLatin1().data());
+        ui->connectServerBtn->setEnabled(false);
+        ui->serverIp->setEnabled(false);
+        ui->disconnectServerBtn->setEnabled(true);
+        ui->refreshListBtn->setEnabled(true);
+        ui->sendFileBtn->setEnabled(true);
+        ui->dwldFileBtn->setEnabled(true);
+    }
 
-    connect_to_radio();
+    //connect_to_radio();
 }
 
 void MainWindow::on_disconnectServerBtn_clicked()
