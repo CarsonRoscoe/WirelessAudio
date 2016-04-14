@@ -61,7 +61,6 @@ AudioManager::~AudioManager() {
     delete audioOutput;
     delete circularBuffer;
     delete buffer;
-    delete readFileWorker;
     delete populateBufferWorker;
 }
 
@@ -123,23 +122,17 @@ void AudioManager::pause() {
 }
 
 void AudioManager::resume() {
-    audioOutput->resume();
-    songState = Playing;
+    if (audioOutput->state() == QAudio::SuspendedState) {
+        audioOutput->resume();
+        songState = Playing;
+    }
 }
 
 void AudioManager::stop() {
-    if (songState == Stopped)
-        return;
     audioOutput->stop();
-    file->close();
-    delete audioOutput;
     songState = Stopped;
 }
-/*
-void AudioManager::changeVolume(int vol) {
-    audioOutput->setVolume(vol);
-}
-*/
+
 void AudioManager::skip(float seconds) {
     //pause();
     int curPos = buffer->pos();
@@ -153,11 +146,9 @@ void AudioManager::skip(float seconds) {
 }
 
 QIODevice * AudioManager::play() {
-    qDebug() << "Play entered";
     device = buffer;
-    audioOutput->start(device);
-    qDebug() << "Playing device, current buffered amount: " << buffer->size();
-    return device;
+    audioOutput->start(buffer);
+    return buffer;
 }
 
 void AudioManager::setVolume(float vol) {

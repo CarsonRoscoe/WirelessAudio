@@ -181,7 +181,7 @@ void MainWindow::on_startServerBtn_clicked()
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startBroadcastBtn_clicked()
 {
-//    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
+    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
     start_radio();
 }
 

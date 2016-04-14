@@ -150,16 +150,17 @@ void MainWindow::on_playPauseBtn_clicked()
             audioManager->resume();
         } else {
             if (lastSong != "") {
-                audioManager->stop();
+                audioManager->pause();
             }
             lastSong = fileName;
 
             qDebug() << dir.absoluteFilePath(fileName);
 
             QFile *file = new QFile(dir.absoluteFilePath(fileName));
+            listeningBuffer->seek(listeningBuffer->size());
             audioManager->loadSong(file);
+            audioManager->resume();
         }
-
     }
 }
 

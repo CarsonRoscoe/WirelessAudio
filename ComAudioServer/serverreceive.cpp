@@ -394,8 +394,11 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
         listenSockClosed = 1;
         acceptSockClosed = 1;
         GlobalFree(SI);
+        totalbytesreceived = 0;
         return;
     }
+
+    SleepEx(10, true);
 
     char slotsize[CLIENT_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);

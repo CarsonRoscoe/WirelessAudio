@@ -12,7 +12,6 @@ PopulateBufferWorker::PopulateBufferWorker(CircularBuffer * circularBuffer, QBuf
 
 PopulateBufferWorker::~PopulateBufferWorker() {
     stayAlive = false;
-    buffer->close();
 }
 
 void PopulateBufferWorker::doWork() {
