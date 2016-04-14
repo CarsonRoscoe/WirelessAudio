@@ -50,9 +50,9 @@ int ClientSendRequest(int flag)
 
 DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
 {
-    char *sendbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
-    char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
-    char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
+    char *sendbuff = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
+    char *recvbuff = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
+    char *message = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
     int flag = (int)lpParameter;
     int sentb = 0, recvb = 1, totalb = 0, i = 0;
     wchar_t *path;
@@ -63,23 +63,23 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         memset(recvbuff, 0, sizeof(recvbuff));
         memset(message, 0, sizeof(message));
         sendbuff[0] = flag;
-        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        sentb = send(controlSock, sendbuff, CONTROL_PACKET_SIZE, 0);
         while(recvb != SOCKET_ERROR)
         {
-            recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
-            if (recvbuff[0] == 0)
-            {
-                break;
-            }
+            recvb = recv(controlSock, recvbuff, CONTROL_PACKET_SIZE, 0);
             strcat(message, recvbuff);
             totalb += recvb;
-            if (totalb >= SERVER_PACKET_SIZE)
+            if (totalb >= CONTROL_PACKET_SIZE)
             {
+                if (message[0] == 0)
+                {
+                    break;
+                }
                 songList[i] = new char[100];
                 strcpy(songList[i], message);
                 qDebug() << songList[i];
                 i++;
-                totalb -= SERVER_PACKET_SIZE;
+                totalb -= CONTROL_PACKET_SIZE;
                 memset(message, 0, sizeof(message));
             }
         }
@@ -87,10 +87,10 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     case SEND_SONG_TO_SERVER:
         sendbuff[0] = flag;
         strcat(sendbuff, sendFileName);
-        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
-        while(totalb < SERVER_PACKET_SIZE && recvb != SOCKET_ERROR)
+        sentb = send(controlSock, sendbuff, CONTROL_PACKET_SIZE, 0);
+        while(totalb < CONTROL_PACKET_SIZE && recvb != SOCKET_ERROR)
         {
-            recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
+            recvb = recv(controlSock, recvbuff, CONTROL_PACKET_SIZE, 0);
             qDebug() << "received bytes:" << recvb;
             totalb += recvb;
         }
@@ -110,7 +110,7 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         hReceiveClosed = 1;
         ClientReceiveSetup(listenSock, CLIENT_DEFAULT_PORT, acceptEvent);
         ClientListen();
-        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        sentb = send(controlSock, sendbuff, CONTROL_PACKET_SIZE, 0);
         break;
     default:
         qDebug() << "Invalid request";

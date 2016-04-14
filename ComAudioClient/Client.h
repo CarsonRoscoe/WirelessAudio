@@ -52,6 +52,7 @@ extern void *app;
 #define ERRORSIZE           512
 #define CLIENT_PACKET_SIZE  25600
 #define SERVER_PACKET_SIZE  25600
+#define CONTROL_PACKET_SIZE 256
 
 ////////////////// Control Channel Flags ///////////////////
 #define GET_UPDATE_SONG_LIST    1
