@@ -276,6 +276,8 @@ DWORD WINAPI ClientListenThread(LPVOID lpParameter)
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
     HANDLE hThread;
     DWORD ThreadId;
+    qDebug() << "ClientListenThreadP2P";
+    listenAccept = true;
 
     if ((hThread = CreateThread(NULL, 0, ClientReceiveThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
         qDebug() << "Create ServerReceiveThread failed with error " << GetLastError();
@@ -284,6 +286,7 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
 
 
     while (listenAccept) {
+        qDebug() << "Preparing to accept connection";
         p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
         qDebug() << "P2P Accepted a request";
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
@@ -414,7 +417,6 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     // Save the accept event in the event array.
     EventArray[0] = p2pAcceptEvent;
 
-    // Wait for accept() to signal an event and also process WorkerRoutine() returns.
     qDebug() << "ClientReceiveThreadP2P: Preparing to WSAWaitForMultipleEvents";
     while (TRUE) {
         Index = WSAWaitForMultipleEvents(1, EventArray, FALSE, WSA_INFINITE, TRUE);
@@ -445,7 +447,7 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
     sprintf_s(errMsg, "Socket %d connected\n", p2pAcceptSock);
-    p2pAcceptSockClosed = 0;
+    p2pAcceptSockClosed = 1;
     qDebug() << errMsg;
 
     Flags = 0;

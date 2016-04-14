@@ -432,13 +432,18 @@ void MainWindow::on_tabWidget_currentChanged(int index)
 
     switch(CurrentState) {
         case VoiceChat:
-            if (ClientReceiveSetupP2P() != -1)
+            if (ClientReceiveSetupP2P() != -1) {
                 ClientListenP2P();
+                qDebug() << "Started up P2P listening";
+            } else {
+                qDebug() << "Could not start P2P listening";
+            }
             microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
             microphoneWorker->moveToThread(&microphoneThread);
             connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
             connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
             microphoneThread.start();
+            qDebug() << "Entering voice chat";
             break;
     }
 }
