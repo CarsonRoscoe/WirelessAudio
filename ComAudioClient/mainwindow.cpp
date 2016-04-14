@@ -49,17 +49,12 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
-    //p2pListenSockClosed = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
-    //ClientListenP2P();
     listeningBuffer->open(QIODevice::ReadWrite);
+
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
     circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
-//    if (ClientReceiveSetupP2P() != -1)
-//        ClientListenP2P();
-//    else
-//        qDebug() << "ClientReceiveSetupP2P Error'd";
 
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
@@ -73,12 +68,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
-
-    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
-    microphoneWorker->moveToThread(&microphoneThread);
-    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
-    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
-    microphoneThread.start();
 
     get_local_files();
 }
@@ -203,17 +192,17 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
-    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-            controlSock, CONTROL_PORT)) == 0)
-    {
-        strcpy(address, ui->serverIp->text().toLatin1().data());
-        ui->connectServerBtn->setEnabled(false);
-        ui->serverIp->setEnabled(false);
-        ui->disconnectServerBtn->setEnabled(true);
-        ui->refreshListBtn->setEnabled(true);
-        ui->sendFileBtn->setEnabled(true);
-        ui->dwldFileBtn->setEnabled(true);
-    }
+//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+//            controlSock, CONTROL_PORT)) == 0)
+//    {
+//        strcpy(address, ui->serverIp->text().toLatin1().data());
+//        ui->connectServerBtn->setEnabled(false);
+//        ui->serverIp->setEnabled(false);
+//        ui->disconnectServerBtn->setEnabled(true);
+//        ui->refreshListBtn->setEnabled(true);
+//        ui->sendFileBtn->setEnabled(true);
+//        ui->dwldFileBtn->setEnabled(true);
+//    }
 
     connect_to_radio();
 }
@@ -308,10 +297,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    isRecording = true;
    //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
-   audioManager->playRecord();
 
-   p2pSendSockClosed = ClientSendSetup(ui->peerVoiceIp->text().toLatin1().data(),
-                                        p2pSendSock, P2P_DEFAULT_PORT);
    //audioFile->start(&dFile);
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
@@ -396,7 +382,6 @@ void MainWindow::cleanupp2p()
 
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
-    //enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
     switch(CurrentState) {
     case MediaPlayer:
         //Invoke MediaPlayer cleanup
@@ -433,4 +418,16 @@ void MainWindow::on_tabWidget_currentChanged(int index)
     }
 
     CurrentState = static_cast<ProgramState>(index);
+
+    switch(CurrentState) {
+        case VoiceChat:
+            if (ClientReceiveSetupP2P() != -1)
+                ClientListenP2P();
+            microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
+            microphoneWorker->moveToThread(&microphoneThread);
+            connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
+            connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
+            microphoneThread.start();
+            break;
+    }
 }
