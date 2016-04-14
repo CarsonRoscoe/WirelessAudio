@@ -46,10 +46,12 @@ void CALLBACK ClientCallbackP2P2(DWORD Error, DWORD BytesTransferred, LPWSAOVERL
 #define CLIENT_PACKET_SIZE  25600
 #define SERVER_PACKET_SIZE  25600
 
+#define MY_BUF_SIZE 40000
+
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
     SOCKET Socket;
-    CHAR Buffer[CLIENT_PACKET_SIZE];
+    CHAR Buffer[MY_BUF_SIZE];
     WSABUF DataBuf;
     DWORD BytesSEND;
     DWORD BytesRECV;

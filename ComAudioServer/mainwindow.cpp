@@ -21,7 +21,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, CLIENT_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
     QValidator* val = new QRegExpValidator(regex, this);
@@ -59,7 +59,7 @@ QThread rfw_thread;
 
 void MainWindow::on_startServerBtn_clicked()
 {
-    if (!udpserver.init_socket(7000)) {
+    if (!udpserver.init_socket(4985)) {
         qDebug() << "failed to init socket";
     }
 
@@ -67,14 +67,16 @@ void MainWindow::on_startServerBtn_clicked()
         qDebug() << "failed to set multicast settings";
     }
 
-    cb = new CircularBuffer(CIRCULARBUFFERSIZE, BUFFERSIZE, this);
+    cb = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
 
     QDir dir(QDir::currentPath());
     if (!dir.cd("../AudioFiles")) {
         qWarning() << "Can't find /AudioFiles directory!";
     }
 
-    QFile *file = new QFile(dir.absoluteFilePath("classical_bach.wav"));
+    QString fileName = ui->songList->currentItem()->text();
+
+    QFile *file = new QFile(dir.absoluteFilePath(fileName));
     ReadFileWorker *rfw = new ReadFileWorker(file, cb);
 
     rfw->moveToThread(&rfw_thread);
@@ -93,42 +95,36 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
     qDebug() << "thread created";
 
     ServerUDP* serv = (ServerUDP*)lp_param;
-    DWORD bytes_to_send = 1000;
+    DWORD bytes_to_send = SERVER_PACKET_SIZE;
     DWORD total = 0;
 
-    char message[1000] = { '\0' };
+    char message[SERVER_PACKET_SIZE] = { '\0' };
     memset(message, '\0', sizeof(message));
 
+//    QString path = QCoreApplication::applicationDirPath();
+//    path.append("/testing.wav");
+//    QFile myfile(path);
+
+//    if(!myfile.open(QIODevice::ReadWrite)) {
+//        qDebug() << "failed";
+//    }
+
     while (1) {
+
+
         if (!cb->pop(message)) {
             qDebug() << "couldn't pop off cb";
+            continue;
         }
+
+//        if (myfile.write(message, MY_BUF_SIZE) < 0) {
+//            qDebug() << "error writing file";
+//        }
 
         if (!serv->broadcast_message(message, &bytes_to_send)) {
-            qDebug() << "broadcase message failed";
+            qDebug() << "broadcast failed";
         }
 
-//        if (cb->length > 0) {
-//            total = cb->length;`
-//            bytes_to_send = total;
-//        }
-
-//        if (total > 0) {
-
-//            if (bytes_to_send > 40000) {
-//                bytes_to_send = 40000;
-//            }
-
-//            cb->pop(msg);
-
-//            if (!serv->broadcast_message(msg, &bytes_to_send)) {
-//                qDebug() << "broadcast failed";
-//            }
-
-//            total -= bytes_to_send;
-//        }
-
-//        Sleep(1000);
     }
 }
 void MainWindow::on_startBroadcastBtn_clicked()

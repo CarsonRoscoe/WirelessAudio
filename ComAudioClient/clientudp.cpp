@@ -54,9 +54,9 @@ bool ClientUDP::init_multicast(const char *name) {
 
 bool ClientUDP::receive() {
 
-    memset(sock_info.Buffer, '\0', 1000);  // TODO: use buffer size define
+    memset(sock_info.Buffer, '\0', SERVER_PACKET_SIZE);  // TODO: use buffer size define
 
-    sock_info.DataBuf.len = 1000;
+    sock_info.DataBuf.len = SERVER_PACKET_SIZE;
     sock_info.DataBuf.buf = sock_info.Buffer;
 
     ZeroMemory(&sock_info.Overlapped, sizeof(WSAOVERLAPPED));
@@ -78,13 +78,14 @@ bool ClientUDP::receive() {
                 return false;
             }
 
-            if (!WSAGetOverlappedResult(sock_info.Socket, &(sock_info.Overlapped), &sock_info.BytesRECV, false, &flags)) {
-                qDebug() << "UDP WSAGetOverlappedResult() failed: " << WSAGetLastError();
-                return false;
-            }
         } else {
             qDebug() << "WSARecvFrom() failed: " << WSAGetLastError();
+            return false;
         }
+    }
+    if (!WSAGetOverlappedResult(sock_info.Socket, &(sock_info.Overlapped), &sock_info.BytesRECV, false, &flags)) {
+        qDebug() << "UDP WSAGetOverlappedResult() failed: " << WSAGetLastError();
+        return false;
     }
 
     return true;

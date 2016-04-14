@@ -1,10 +1,11 @@
+#include <QCoreApplication>
 #include "udpthread.h"
 
 void UDPThread::receive() {
 
     qDebug() << "thread created";
 
-    if (!clientUDP.init_socket(7000)) {
+    if (!clientUDP.init_socket(4985)) {
         qDebug() << "failed to init socket";
     }
 
@@ -16,27 +17,11 @@ void UDPThread::receive() {
 
         qDebug() << "got song data";
 
-        // push back circular buffer
-
+        if (!circularBufferRecv->pushBack(clientUDP.sock_info.DataBuf.buf)) {
+            continue;
+        }
+       emit stream_data_recv();
     }
-
-//    while (1) {
-
-//        // check if header packet (with file type info)
-//        // push back on to circular buffer clientUDP.sock_info.Databuf.buf
-//        // emit signal indicating song header (process in mainwindow to recreate QAudioOutput)
-
-//        // if not header packet
-//        // append to circular buff client.UDP.sock_info.Databuf.buf
-//        // emit signal indicating more song data acquired (process in mainwindow)
-
-//        if (!clientUDP.receive()) {
-//            qDebug() << "receive failed";
-//        } else {
-//            qDebug() << clientUDP.sock_info.DataBuf.buf;
-//        }
-//    }
-
     qDebug() << "thread exiting";
 }
 

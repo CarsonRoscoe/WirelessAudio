@@ -7,16 +7,20 @@ PopulateBufferWorker::PopulateBufferWorker(CircularBuffer * circularBuffer, QBuf
     this->buffer = buffer;
 }
 
+PopulateBufferWorker::~PopulateBufferWorker() {
+    stayAlive = false;
+    buffer->close();
+}
+
 void PopulateBufferWorker::doWork() {
 
     buffer->open(QIODevice::ReadWrite);
     qDebug() << "PopulateBufferWorker doWork Enter";
-    while(true) {
-        if(circularBuffer->pop(buffer)){
+    while(stayAlive) {
+        if(stayAlive && circularBuffer->pop(buffer)){
          qDebug() << "poppacket"<<poppacket;
          poppacket++;
         }
     }
     qDebug() << "PopulateBufferWorker doWork Exit";
-    buffer->close();
 }

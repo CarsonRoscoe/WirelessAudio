@@ -69,7 +69,7 @@ bool ServerUDP::init_multicast(const char *name) {
 
     dest_addr.sin_family       = AF_INET;
     dest_addr.sin_addr.s_addr  = inet_addr(name);
-    dest_addr.sin_port         = htons(7000);
+    dest_addr.sin_port         = htons(4985);
 
     return true;
 }
@@ -105,7 +105,7 @@ bool ServerUDP::broadcast_message(char *message, LPDWORD lp_bytes_sent) {
         return false;
 
     }
-    qDebug() << "ServerUDP::Broadcast>>Bytes Sent:[" << sock_info.BytesSEND << "]";
+//    qDebug() << "ServerUDP::Broadcast>>Bytes Sent:[" << sock_info.BytesSEND << "]";
 
     return true;
 }

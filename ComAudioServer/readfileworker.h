@@ -3,6 +3,7 @@
 
 #include <QThread>
 #include <QFile>
+#include "server.h"
 #include "circularbuffer.h"
 
 class ReadFileWorker : public QObject {

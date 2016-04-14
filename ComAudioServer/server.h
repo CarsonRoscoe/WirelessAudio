@@ -9,9 +9,11 @@
 #define SERVER_DEFAULT_PORT	7001
 #define CLIENT_DEFAULT_PORT	7002
 #define FILENAMESIZE		100
-#define ERRORSIZE			512
+#define ERRORSIZE			8192
 #define CLIENT_PACKET_SIZE  8192
-#define SERVER_PACKET_SIZE  8192
+#define SERVER_PACKET_SIZE  25600
+
+#define MY_BUF_SIZE 40000
 
 ///////////// Global Structure Definitions ////////////////
 struct ClientParams {

@@ -4,6 +4,7 @@
 #include "udpthread.h"
 #include "clientudp.h"
 #include "populatemicrophoneworker.h"
+#include "wavheader.h"
 
 #include <QDebug>
 #include <QAudioInput>
@@ -13,6 +14,8 @@
 #include <io.h>
 #include <QPalette>
 #include <QDataStream>
+
+QFile *file;
 
 QFile dFile;
 QAudioInput * audio;
@@ -49,12 +52,12 @@ MainWindow::MainWindow(QWidget *parent) :
     listeningBuffer->open(QIODevice::ReadWrite);
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
-    circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
-    if (ClientReceiveSetupP2P() != -1)
-        ClientListenP2P();
-    else
-        qDebug() << "ClientReceiveSetupP2P Error'd";
+//    if (ClientReceiveSetupP2P() != -1)
+//        ClientListenP2P();
+//    else
+//        qDebug() << "ClientReceiveSetupP2P Error'd";
 
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
@@ -258,7 +261,9 @@ void MainWindow::on_closeInBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
+
     multicastThread = new QThread();
+//    audioManager->Init(listeningBuffer, circularBufferRecv);
 
     udp_thread = new UDPThread();
 
@@ -268,9 +273,26 @@ void MainWindow::on_connectServerBtn_clicked()
     // TODO: use unique connection...
     connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()));
     connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()));
-    connect(udp_thread, SIGNAL(finished()), multicastThread, SLOT(quit()), Qt::DirectConnection);
+//    connect(udp_thread, SIGNAL(finished()), multicastThread, SLOT(quit()), Qt::DirectConnection);
+    connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()));
 
     udp_thread->udp_thread_request();
+}
+bool playing = false;
+void MainWindow::play_incoming_stream() {
+    if (!playing) {
+
+        //wav_hdr wavHeader;
+        //file = new QFile("C:/Users/Spenser/Documents/git/ComAudio/AudioFiles/classical_back.wav");
+        //file->open(QIODevice::ReadOnly);
+        //file->read((char*)&wavHeader, sizeof(wav_hdr));
+        //audioManager->receivedWavHeader(wavHeader);
+        //file->close();
+
+        audioManager->play();
+
+        playing = true;
+    }
 }
 
 

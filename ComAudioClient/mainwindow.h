@@ -42,6 +42,8 @@ private slots:
 
     void on_connectServerBtn_clicked();
 
+    void play_incoming_stream();
+
     void on_connectPeerVoiceBtn_clicked();
 
     void on_recordBtn_clicked();

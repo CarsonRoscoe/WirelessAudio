@@ -54,7 +54,7 @@ private:
     CircularBuffer *circularBuffer;
     QBuffer *buffer;
     ReadFileWorker *readFileWorker;
-    PopulateBufferWorker *populateBufferWorker;
+    PopulateBufferWorker *populateBufferWorker = NULL;
     QThread readWorkerThread;
     QThread populateBufferThread;
     int bytesPerSecond;

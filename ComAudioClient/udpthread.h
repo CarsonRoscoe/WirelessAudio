@@ -18,6 +18,7 @@ public slots:
 
 signals:
     void udp_thread_requested();
+    void stream_data_recv();
 
 
 private:
