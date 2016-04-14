@@ -1,3 +1,47 @@
+/*------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: mainwindow.cpp - This file handles interaction with the UI.
+--
+-- PROGRAM: comaudio
+--
+-- FUNCTIONS:
+--  MainWindow
+-- ~MainWindow()
+-- get_selected_list_item(int tab)
+-- on_playPauseBtn_clicked()
+-- on_skipFwdBtn_clicked()
+-- on_skipBkwdBtn_clicked()
+-- on_nextSongBtn_clicked()
+-- on_prevSongBtn_clicked()
+-- on_connectPeerBtn_clicked()
+-- on_requestFileBtn_clicked()
+-- void MainWindow::on_connectServerBtn_clicked()
+-- void MainWindow::on_disconnectServerBtn_clicked()
+-- void MainWindow::connect_to_radio()
+-- void MainWindow::play_incoming_stream()
+-- void MainWindow::on_refreshListBtn_clicked()
+-- void MainWindow::on_sendFileBtn_clicked()
+-- void MainWindow::on_dwldFileBtn_clicked()
+-- void MainWindow::on_connectPeerVoiceBtn_clicked()
+-- void MainWindow::on_recordBtn_clicked()
+-- void MainWindow::on_stopRecordBtn_clicked()
+-- void MainWindow::updateSongList(const QString &s)
+-- void MainWindow::cleanupp2p()
+-- void MainWindow::on_tabWidget_currentChanged(int index)
+-- void MainWindow::on_volumeSlider_sliderMoved(int position)
+
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee, Thomas Yu, Carson Roscoe, Micah Williams
+--
+-- PROGRAMMER: Spenser Lee, Thomas Yu, Carson Roscoe, Micah Williams
+--
+-- NOTES:
+-- This file is responsible for linking together the functionality of the program with a user interface.
+--
+
+----------------------------------------------------------------------------------------------------------------------*/
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "Client.h"
@@ -36,22 +80,39 @@ UDPThread* udp_thread;
 
 ClientUDP udpclient;
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainWindow(QWidget *parent)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee,Carson Roscoe, Thomas Yu
+--
+-- INTERFACE: MainWindow(QWidget *parent)
+--
+-- RETURNS: N/A - constructor
+--
+-- NOTES:
+-- This is the constructor for the main window.
+----------------------------------------------------------------------------------------------------------------------*/
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
     QFile f("../sweetbabyjesus.qss");
-        if (!f.exists())
-        {
-            printf("Unable to set stylesheet, file not found\n");
-        }
-        else
-        {
-            f.open(QFile::ReadOnly | QFile::Text);
-            QTextStream ts(&f);
-            qApp->setStyleSheet(ts.readAll());
-        }
-
+    if (!f.exists())
+    {
+        printf("Unable to set stylesheet, file not found\n");
+    }
+    else
+    {
+        f.open(QFile::ReadOnly | QFile::Text);
+        QTextStream ts(&f);
+        qApp->setStyleSheet(ts.readAll());
+    }
 
     isRecording = false;
     isPlaying = false;
@@ -74,34 +135,78 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    ui->peerIp->setValidator(val);
     ui->serverIp->setValidator(val);
     ui->peerVoiceIp->setValidator(val);
-    ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
 
     get_local_files();
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainWindow()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: MainWindow()
+--
+-- RETURNS: N/A - destructor
+--
+-- NOTES:
+-- This is the destructor for the main window.
+----------------------------------------------------------------------------------------------------------------------*/
 MainWindow::~MainWindow()
 {
     delete ui;
     delete audioManager;
 }
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: get_selected_list_item(int tab)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: MainWindow(QWidget *parent)
+--
+-- RETURNS: QString - song name
+--
+-- NOTES:
+-- This functions returns a QString of the selected song.
+----------------------------------------------------------------------------------------------------------------------*/
+QString MainWindow::get_selected_list_item() {
 
-QString MainWindow::get_selected_list_item(int tab) {
-
-    if (tab == 0) {
-        return ui->songList->currentItem()->text();
-    } else {
-        return ui->localFileList->currentItem()->text();
-    }
+    return ui->songList->currentItem()->text();
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: get_local_files()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: get_local_files()
+--
+-- RETURNS: N/A - constructor
+--
+-- NOTES:
+-- grabs the local files that can be played.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::get_local_files() {
 
-    ui->localFileList->clear();
     ui->songList->clear();
 
     QStringList nameFilter("*.wav");
@@ -114,13 +219,28 @@ void MainWindow::get_local_files() {
 
     QStringList files = directory.entryList(nameFilter);
 
-    ui->localFileList->addItems(files);
     ui->songList->addItems(files);
-    ui->localFileList->setCurrentRow(0);
     ui->songList->setCurrentRow(0);
 }
 
-// ---- Media Player Functions ----
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_playPauseBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_playPauseBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the play/pause button.
+----------------------------------------------------------------------------------------------------------------------*/
 
 void MainWindow::on_playPauseBtn_clicked()
 {
@@ -141,7 +261,7 @@ void MainWindow::on_playPauseBtn_clicked()
             qWarning() << "Can't find /AudioFiles directory!";
         }
 
-        QString fileName = get_selected_list_item(0);
+        QString fileName = get_selected_list_item();
 
         qDebug() << "fileName = " << fileName;
         qDebug() << "lastSong = " << lastSong;
@@ -163,46 +283,138 @@ void MainWindow::on_playPauseBtn_clicked()
         }
     }
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_resumeBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_resumeBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the resume button.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_resumeBtn_clicked()
 {
     //audioManager->resume();
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_skipFwdBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_skipFwdBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the skip forward button
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_skipFwdBtn_clicked()
 {
     audioManager->skip(10);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_skipBkwBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_skipBckBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the skip back button
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_skipBkwdBtn_clicked()
 {
     audioManager->skip(-10);
 }
 
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_nextSongBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_nextSongBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the play next song button.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_nextSongBtn_clicked()
 {
  //audio->reset(microphoneBuffer);
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_prevSongBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_prevSongBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the play previous song button.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_prevSongBtn_clicked()
 {
 
 }
 
-// ---- File Transfer Functions ----
-
-void MainWindow::on_connectPeerBtn_clicked()
-{
-
-}
-
-void MainWindow::on_requestFileBtn_clicked()
-{
-
-}
-
-// ---- Radio Streaming Functions ----
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_connectServerBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_connectServerBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the connect to radio server to start receiving the broadcast.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_connectServerBtn_clicked()
 {
     if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
@@ -220,7 +432,24 @@ void MainWindow::on_connectServerBtn_clicked()
 
     connect_to_radio();
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_disconnectServerBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_disconnectServerBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the disconnect to radio server to stop receiving the broadcast.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_disconnectServerBtn_clicked()
 {
     closesocket(controlSock);
@@ -234,10 +463,28 @@ void MainWindow::on_disconnectServerBtn_clicked()
     ui->playlistList->clear();
     udp_thread->close_socket();
     audioManager->pause();
+    circularBufferRecv->resetBuffer();
     playing = false;
     connectedControl = false;
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: connect_to_radio()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:connect_to_radio()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the connect to radio server to start receiving the broadcast.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::connect_to_radio() {
     multicastThread = new QThread();
 
@@ -253,7 +500,24 @@ void MainWindow::connect_to_radio() {
     udp_thread->udp_thread_request();
 
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: connect_to_radio()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:connect_to_radio()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Play broadcast
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::play_incoming_stream() {
     if (!playing) {
 
@@ -261,7 +525,24 @@ void MainWindow::play_incoming_stream() {
         playing = true;
     }
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: connect_to_radio()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:connect_to_radio()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Refresh song list
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_refreshListBtn_clicked()
 {
     qDebug() << "fuck you qt";
@@ -273,7 +554,24 @@ void MainWindow::on_refreshListBtn_clicked()
         ui->playlistList->addItem(QString::fromLatin1(songList[i]));
     }
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_sendFileBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Micah Williams
+--
+-- PROGRAMMER: Micah Williams
+--
+-- INTERFACE:on_sendFileBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Sends a song to the server.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_sendFileBtn_clicked()
 {
     QFile *file = new QFile(QFileDialog::getOpenFileName(this, tr("Pick A Song To Send"), 0, tr("Music (*.wav)")));
@@ -286,7 +584,24 @@ void MainWindow::on_sendFileBtn_clicked()
         ClientSendRequest(SEND_SONG_TO_SERVER);
     }
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_sendFileBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Micah Williams
+--
+-- PROGRAMMER: Micah Williams
+--
+-- INTERFACE:on_sendFileBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- To download a song from the server.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_dwldFileBtn_clicked()
 {
     strcpy(recvFileName, ui->playlistList->currentItem()->text().toLatin1());
@@ -294,7 +609,25 @@ void MainWindow::on_dwldFileBtn_clicked()
 }
 
 // ---- PTP Microphone Chat Functions ----
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_connectPeerVoiceBtn_clicked(
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Carson Roscoe, Thomas Yu
+--
+-- PROGRAMMER: Carson Roscoe, Thomas Yu
+--
+-- INTERFACE:on_connectPeerVoiceBtn_clicked(
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function is called when the connect button is clicked. It starts a thread to populate a circular buffer and
+-- initializes microphone recording and sets up a connection to another client.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
     microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
@@ -319,27 +652,34 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-   //audio->setBufferSize(SERVER_PACKET_SIZE * BUFFERSIZE);
-   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-
-   //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
-   //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
 
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_connectPeerVoiceBtn_clicked(
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Carson Roscoe, Thomas Yu
+--
+-- PROGRAMMER: Carson Roscoe, Thomas Yu
+--
+-- INTERFACE:on_connectPeerVoiceBtn_clicked(
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function starts the recording from a microphone locally.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_recordBtn_clicked()
 {
 
-
-   //byteArray=microphoneBuffer->buffer();
-   //dFile.setFileName("../RecordTest.raw");
-   //dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -366,7 +706,24 @@ void MainWindow::on_recordBtn_clicked()
    isRecording = true;
    audio->start(microphoneBuffer);
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_stopRecordBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Carson Roscoe, Thomas Yu
+--
+-- PROGRAMMER: Carson Roscoe, Thomas Yu
+--
+-- INTERFACE:on_stopRecordBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function stops the microphone recording.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_stopRecordBtn_clicked()
 {
     isRecording = false;
@@ -378,7 +735,24 @@ void MainWindow::on_stopRecordBtn_clicked()
     //delete audio;
 
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: updateSongList()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:updateSongList()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This function updates the song list.
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::updateSongList(const QString &s)
 {
     ui->songList->addItem(s);
@@ -388,24 +762,25 @@ void MainWindow::cleanupp2p()
 
         qDebug()<<"cleanup";
 }
-/*void MainWindow::StoreToBuffer(){
-    char tempbuff[CLIENT_PACKET_SIZE];
-    //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
 
-    microphoneBuffer->seek(curpos);
-    if(microphoneBuffer->bytesAvailable()>=CLIENT_PACKET_SIZE){
-        int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
-        curpos+=bytes;
-        microphoneBuffer->seek(microphoneBuffer->size()-1);
-        qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
-        qDebug()<<"Push back to buffer her, bytes read:" << bytes;
-
-        if(!micBuf->pushBack(tempbuff)){
-            qDebug()<<"Pushback FAILED";
-        }
-    }
-}*/
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_tabWidget_currentChanged(int index)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Carson Roscoe, Thomas Yu
+--
+-- PROGRAMMER: Carson Roscoe, Thomas Yu
+--
+-- INTERFACE: on_tabWidget_currentChanged(int index)
+--          int index: the tab changed into.
+-- RETURNS: void
+--
+-- NOTES:
+-- This function disconnects and does cleanup on the appropriate tab switchs
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
     switch(CurrentState) {
@@ -454,7 +829,24 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             break;
     }
 }
-
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_tabWidget_currentChanged(int index)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Thomas Yu
+--
+-- PROGRAMMER: Thomas Yu
+--
+-- INTERFACE: on_tabWidget_currentChanged(int index)
+--          int index: the tab changed into.
+-- RETURNS: void
+--
+-- NOTES:
+-- This function disconnects and does cleanup on the appropriate tab switchs
+----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_volumeSlider_sliderMoved(int position)
 {
     double temp = position;

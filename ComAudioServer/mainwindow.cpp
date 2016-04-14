@@ -71,6 +71,18 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    QFile f("../sweetbabyjesus.qss");
+    if (!f.exists())
+    {
+        printf("Unable to set stylesheet, file not found\n");
+    }
+    else
+    {
+        f.open(QFile::ReadOnly | QFile::Text);
+        QTextStream ts(&f);
+        qApp->setStyleSheet(ts.readAll());
+    }
+
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, CLIENT_PACKET_SIZE, this);
 
     ui->setupUi(this);
@@ -158,7 +170,7 @@ void MainWindow::load_local_files() {
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startServerBtn_clicked()
 {
-
+    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
 }
 
 /*---------------------------------------------------------------------------------------------------------------------
@@ -181,7 +193,6 @@ void MainWindow::on_startServerBtn_clicked()
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startBroadcastBtn_clicked()
 {
-    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
     start_radio();
 }
 
@@ -204,11 +215,11 @@ void MainWindow::on_startBroadcastBtn_clicked()
 -- Initializes the UDP multicast socket and launches a ReadFileWorker thread.
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::start_radio() {
-    if (!udpserver.init_socket(4985)) {
+    if (!udpserver.init_socket(MULTICAST_PORT)) {
         qWarning() << "failed to init socket";
     }
 
-    if (!udpserver.init_multicast("234.5.6.7")) {
+    if (!udpserver.init_multicast(MULTICAST_IP)) {
         qWarning() << "failed to set multicast settings";
     }
 
@@ -263,16 +274,20 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 
     char message[SERVER_PACKET_SIZE] = { '\0' };
     memset(message, '\0', sizeof(message));
-
+    int bytesPerSecond = 44100 * 16 / 8 * 2;
+    int bytesRead = 0;
     while (1) {
-
         if (!circularBufferRecv->pop(message)) {
             continue;
         }
-
         if (!serv->broadcast_message(message, &bytes_to_send)) {
             qWarning() << "broadcast failed";
         }
+        bytesRead += bytes_to_send;
+        if (bytesRead < bytesPerSecond)
+            continue;
+        SleepEx(300, true);
+        bytesRead = 0;
     }
 }
 
@@ -294,7 +309,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 -- NOTES:
 -- On click for for next song button. Used for queuing the next song for the stream.
 ---------------------------------------------------------------------------------------------------------------------*/
-void MainWindow::on_nextSongBtn_clicked()
+void MainWindow::on_queueSongBtn_clicked()
 {
     QString filename = ui->songList->currentItem()->text();
     QDir dir(QDir::currentPath());
@@ -303,27 +318,4 @@ void MainWindow::on_nextSongBtn_clicked()
     }
 
     emit change_song(dir.absoluteFilePath(filename));
-}
-
-/*---------------------------------------------------------------------------------------------------------------------
--- FUNCTION: on_prevSongBtn_clicked
---
--- DATE: APRIL 14 2016
---
--- REVISIONS: APRIL 14 2016
---
--- DESIGNER: Spenser Lee
---
--- PROGRAMMER: Spenser Lee
---
--- INTERFACE: on_prevSongBtn_clicked()
---
--- RETURNS: void
---
--- NOTES:
--- On click for start broadcast button.
----------------------------------------------------------------------------------------------------------------------*/
-void MainWindow::on_prevSongBtn_clicked()
-{
-
 }

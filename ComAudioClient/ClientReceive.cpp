@@ -8,7 +8,7 @@
 --              DWORD WINAPI ClientListenThread(LPVOID lpParameter);
 --              DWORD WINAPI ClientReceiveThread(LPVOID lpParameter);
 --              void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
---                  LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+--                LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 --              DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter);
 --
 -- DATE:        April 3, 2016
@@ -51,9 +51,25 @@ int totalbytesreceived, totalbyteswritten;
 
 //////////////////// File Globals /////////////////////////
 bool listenAccept;
-bool safe;
 
-//Carson, designed by Micah
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainWindow(QWidget *parent)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Micah Williams
+--
+-- PROGRAMMER: Carson Roscoe
+--
+-- INTERFACE: int ClientReceiveSetupP2P()
+--
+-- RETURNS: int: -1 if failed.
+--
+-- NOTES:
+-- This initializes a socket to listen for connections.
+----------------------------------------------------------------------------------------------------------------------*/
 int ClientReceiveSetupP2P() {
     int ret;
     WSADATA wsaData;
@@ -210,7 +226,25 @@ int ClientListen()
     return 0;
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientListen
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      int ClientListenP2P()
+--
+--  RETURNS:        Returns 0 on success, -1 on failure
+--
+--	NOTES:
+--      This is the qt-friendly (non-threaded) function called by the GUI to start the
+--      listening for and receiving of file transfer data through threaded function calls.
+---------------------------------------------------------------------------------------*/
 int ClientListenP2P() {
     HANDLE hThread;
     DWORD ThreadId;
@@ -273,7 +307,27 @@ DWORD WINAPI ClientListenThread(LPVOID lpParameter)
     return TRUE;
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientListenThreadP2P
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter the handle to the file to be written to
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the listen thread that first initiates the listening loop, by starting
+--  a thread which listens on an accepted server connection to initiate an event,
+--  triggering the receive thread.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
     HANDLE hThread;
     DWORD ThreadId;
@@ -406,7 +460,27 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
     return TRUE;
 }
 
-//Carson, designer by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientReceiveThreadP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:      N/A
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:      DWORD WINAPI ClientReceiveThreadP2P(
+--                                         LPVOID lpParameter the handle to the file to be written to)
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the receiving thread for receiving microphone audio data from tcp.
+--  After a server connection is accepted, the event fires, and a receive with
+--  a callback thread is made, initiating the callback loop and receive handling.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     WSAEVENT EventArray[1];
     HANDLE hThread;
@@ -527,10 +601,8 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     char slotsize[SERVER_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
 
-    safe = 0;
     while ((circularBufferRecv->pushBack(slotsize)) == false){}
     while ((circularBufferRecv->pushBack(SI->DataBuf.buf)) == false){}
-    safe = 1;
 
 #ifdef DEBUG_MODE
     qDebug() << "\nBytes received:" << BytesTransferred;
@@ -555,6 +627,24 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   CleanupRecvP2P()
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Carson Roscoe
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:     void CleanupRecvP2P()
+--
+--  RETURNS:        void
+--
+--	NOTES:
+--  This function cleans up the used socket when the client wants to stop receiving.
+---------------------------------------------------------------------------------------*/
 void CleanupRecvP2P() {
     GlobalFree(p2pSI);
     closesocket(p2pListenSock);
@@ -573,7 +663,34 @@ void CleanupRecvP2P() {
     listenAccept = false;
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientCallbackP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:      void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
+--                      LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+--
+--                      DWORD Error: error message resulting from WSARecv
+--                      DWORD BytesTransferred: the number of bytes received from tcp
+--                      LPWSAOVERLAPPED Overlapped: the overlapped structure, to be used
+--                          in the next WSARecv call
+--                      DWORD InFlags: unused
+--
+--  RETURNS:        void
+--
+--	NOTES:
+--  This is the callback thread for the WSARecv call for server microphone audio transfer. After
+--  receiving the data from tcp, the number of bytes transferred is put in a slot in
+--  the circular buffer followed by the data in the next slot, to distinguish how
+--  much of the data is valid.
+---------------------------------------------------------------------------------------*/
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
@@ -618,7 +735,33 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
     }
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientWriteToFileThreadP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter)
+--
+--                      LPVOID lpParameter: the handle to the file to be written to
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the thread for handling processing of file transfer data received from
+--  the server/sender and put into the circular buffer by the receiving callback. While the
+--  receiving callback populates the circular buffer from the incoming tcp/udp stream,
+--  this threaded function pulls out data items two at a time as they become
+--  available, to lessen the load on the callback. For each pair of data items it
+--  pulls out, the first is the number that indicates how many bytes is actual data
+--  in the other. The function then checks for the delimeter indicating the last
+--  packet, and aftewards writes the data to the open file.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
@@ -678,7 +821,7 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
 
     while(!lastPacket)
     {
-        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0 && safe == 1)
+        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0)
         {
             circularBufferRecv->pop(sizeBuf);
             sizeBuf[5] = '\0';

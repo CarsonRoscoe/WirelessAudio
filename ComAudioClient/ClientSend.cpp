@@ -119,7 +119,27 @@ int ClientSendSetup(char* addr, SOCKET &sock, int port)
     qDebug() << "Setup success";
 	return 0;
 }
-
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientSendSetupP2P
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      int ClientSendSetupP2P(char* addr)
+--
+--                      char* addr: the ip address to connect to
+--
+--  RETURNS:        Returns 0 on success, -1 on failure
+--
+--	NOTES:
+--      This function sets up the socket for sending a file to the server
+---------------------------------------------------------------------------------------*/
 int ClientSendSetupP2P(char* addr) {
 
     WSADATA WSAData;
@@ -206,8 +226,29 @@ int ClientSend(HANDLE hFile)
     }
     return 0;
 }
-
-//Written by Carson, designed by Micah since it follows her other thread design
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientSendMicrophoneThread(LPVOID lpParameter)
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Thomas Yu
+--
+--  INTERFACE:      DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter)
+--
+--                      LPVOID lpParameter: the handle to the file to be sent
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--      This is the threaded function that sends a file to the server. When the last
+--      portion of the data is read, a delimeter is appended to indicate that it's the
+--      end on the server's side.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     hSendFile = (HANDLE) lpParameter;
     //char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));

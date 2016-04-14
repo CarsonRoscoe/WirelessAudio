@@ -21,9 +21,7 @@ private slots:
 
     void on_startBroadcastBtn_clicked();
 
-    void on_prevSongBtn_clicked();
-
-    void on_nextSongBtn_clicked();
+    void on_queueSongBtn_clicked();
 
 signals:
     void change_song(QString);

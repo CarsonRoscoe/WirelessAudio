@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>466</width>
-    <height>565</height>
+    <height>380</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,62 +15,6 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QLineEdit" name="listenPort">
-      <property name="text">
-       <string>7000</string>
-      </property>
-      <property name="placeholderText">
-       <string>Server Port</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0" colspan="3">
-     <widget class="QPushButton" name="startBroadcastBtn">
-      <property name="text">
-       <string>Start Broadcast</string>
-      </property>
-     </widget>
-    </item>
-    <item row="6" column="0" colspan="3">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QTableWidget" name="clientTable"/>
-      </item>
-     </layout>
-    </item>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="startServerBtn">
-      <property name="text">
-       <string>Start Server</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Connected Clients</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="0" colspan="3">
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <item>
-       <widget class="QPushButton" name="prevSongBtn">
-        <property name="text">
-         <string>Previous</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="nextSongBtn">
-        <property name="text">
-         <string>Next</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
     <item row="1" column="0">
      <widget class="QLabel" name="label_2">
       <property name="text">
@@ -78,34 +22,39 @@
       </property>
      </widget>
     </item>
-    <item row="8" column="0" colspan="3">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QListWidget" name="consoleList"/>
-      </item>
-     </layout>
+    <item row="4" column="0" colspan="2">
+     <widget class="QPushButton" name="startBroadcastBtn">
+      <property name="text">
+       <string>Start Broadcast</string>
+      </property>
+     </widget>
     </item>
-    <item row="2" column="0" colspan="3">
+    <item row="2" column="0" colspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_4">
       <item>
        <widget class="QListWidget" name="songList"/>
       </item>
      </layout>
     </item>
-    <item row="7" column="0">
-     <widget class="QLabel" name="label_3">
+    <item row="0" column="0" colspan="2">
+     <widget class="QPushButton" name="startServerBtn">
       <property name="text">
-       <string>Console</string>
+       <string>Start Server</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="2">
+     <widget class="QPushButton" name="queueSongBtn">
+      <property name="text">
+       <string>Queue Song</string>
       </property>
      </widget>
     </item>
    </layout>
-   <zorder>listenPort</zorder>
-   <zorder>label</zorder>
    <zorder>label_2</zorder>
-   <zorder>label_3</zorder>
    <zorder>startServerBtn</zorder>
    <zorder>startBroadcastBtn</zorder>
+   <zorder>queueSongBtn</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -129,13 +78,8 @@
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <tabstops>
-  <tabstop>listenPort</tabstop>
   <tabstop>startServerBtn</tabstop>
   <tabstop>songList</tabstop>
-  <tabstop>prevSongBtn</tabstop>
-  <tabstop>nextSongBtn</tabstop>
-  <tabstop>clientTable</tabstop>
-  <tabstop>consoleList</tabstop>
  </tabstops>
  <resources/>
  <connections/>

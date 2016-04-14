@@ -48,6 +48,8 @@ extern void *app;
 #define CLIENT_DEFAULT_PORT 7002
 #define P2P_DEFAULT_PORT    7003
 #define CONTROL_PORT        7004
+#define MULTICAST_PORT      4985
+#define MULTICAST_IP        "234.5.6.7"
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
 #define CLIENT_PACKET_SIZE  25600

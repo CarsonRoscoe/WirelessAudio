@@ -15,6 +15,29 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>Volume</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QSlider" name="volumeSlider">
+      <property name="toolTip">
+       <string>Volume Control</string>
+      </property>
+      <property name="toolTipDuration">
+       <number>2</number>
+      </property>
+      <property name="value">
+       <number>50</number>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="accessibleName">
@@ -24,31 +47,24 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="mediaTab">
        <attribute name="title">
         <string> Media Player</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_5">
-        <item row="0" column="0" colspan="5">
-         <widget class="QLabel" name="label_4">
-          <property name="text">
-           <string>Songs</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="5">
-         <widget class="QListWidget" name="songList"/>
-        </item>
-        <item row="2" column="4">
+        <item row="2" column="2">
          <widget class="QPushButton" name="nextSongBtn">
           <property name="text">
            <string>Next</string>
           </property>
          </widget>
         </item>
-        <item row="2" column="2">
+        <item row="1" column="0" colspan="3">
+         <widget class="QListWidget" name="songList"/>
+        </item>
+        <item row="2" column="1">
          <widget class="QPushButton" name="playPauseBtn">
           <property name="accessibleName">
            <string>play</string>
@@ -58,98 +74,17 @@
           </property>
          </widget>
         </item>
+        <item row="0" column="0" colspan="3">
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Songs</string>
+          </property>
+         </widget>
+        </item>
         <item row="2" column="0">
          <widget class="QPushButton" name="prevSongBtn">
           <property name="text">
            <string>Previous</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="3">
-         <widget class="QPushButton" name="skipFwdBtn">
-          <property name="accessibleName">
-           <string>skip</string>
-          </property>
-          <property name="text">
-           <string>Skip 10</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QPushButton" name="skipBkwdBtn">
-          <property name="text">
-           <string>Back 10</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QPushButton" name="resumeBtn">
-          <property name="text">
-           <string>Resume</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="fileTransferTab">
-       <attribute name="title">
-        <string> File Transfer</string>
-       </attribute>
-       <layout class="QGridLayout" name="gridLayout_3">
-        <item row="2" column="0" colspan="3">
-         <widget class="QListWidget" name="localFileList"/>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLineEdit" name="peerIp">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>Peer IP</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="connectPeerBtn">
-          <property name="text">
-           <string>Connect</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="peerPort">
-          <property name="inputMask">
-           <string>9999</string>
-          </property>
-          <property name="text">
-           <string>7000</string>
-          </property>
-          <property name="placeholderText">
-           <string>Peer Port</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="0" colspan="3">
-         <widget class="QListWidget" name="peerFileList"/>
-        </item>
-        <item row="1" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="text">
-           <string>Local Files</string>
-          </property>
-         </widget>
-        </item>
-        <item row="7" column="0" colspan="3">
-         <widget class="QPushButton" name="requestFileBtn">
-          <property name="text">
-           <string>Request</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="0">
-         <widget class="QLabel" name="label_3">
-          <property name="text">
-           <string>Peer's Files</string>
           </property>
          </widget>
         </item>
@@ -177,7 +112,14 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="2">
+        <item row="2" column="0" colspan="4">
+         <widget class="QListWidget" name="playlistList">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
          <widget class="QPushButton" name="connectServerBtn">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -190,7 +132,7 @@
           </property>
          </widget>
         </item>
-        <item row="0" column="3">
+        <item row="0" column="2">
          <widget class="QPushButton" name="disconnectServerBtn">
           <property name="enabled">
            <bool>false</bool>
@@ -206,42 +148,39 @@
           </property>
          </widget>
         </item>
-        <item row="2" column="0" colspan="5">
-         <widget class="QListWidget" name="playlistList">
-          <property name="enabled">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="3">
-         <widget class="QPushButton" name="dwldFileBtn">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Download Selected</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QPushButton" name="sendFileBtn">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Send File</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="0">
-         <widget class="QPushButton" name="refreshListBtn">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="text">
-           <string>Refresh List</string>
-          </property>
-         </widget>
+        <item row="3" column="0" colspan="3">
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QPushButton" name="sendFileBtn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Send File</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshListBtn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Refresh List</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="dwldFileBtn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Download Selected</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
@@ -250,40 +189,7 @@
         <string> Voice Chat</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
-        <item row="0" column="0">
-         <widget class="QLineEdit" name="peerVoiceIp">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="placeholderText">
-           <string>Peer IP</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLineEdit" name="peerVoicePort">
-          <property name="inputMask">
-           <string>9999</string>
-          </property>
-          <property name="text">
-           <string>7000</string>
-          </property>
-          <property name="placeholderText">
-           <string>Peer Port</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QPushButton" name="connectPeerVoiceBtn">
-          <property name="accessibleName">
-           <string>connect</string>
-          </property>
-          <property name="text">
-           <string>Connect</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0" colspan="3">
+        <item row="2" column="0" colspan="4">
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QPushButton" name="recordBtn">
@@ -304,31 +210,41 @@
           </item>
          </layout>
         </item>
+        <item row="0" column="2" colspan="2">
+         <widget class="QPushButton" name="connectPeerVoiceBtn">
+          <property name="accessibleName">
+           <string>connect</string>
+          </property>
+          <property name="text">
+           <string>Connect</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLineEdit" name="peerVoiceIp">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="placeholderText">
+           <string>Peer IP</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
-     </widget>
-    </item>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_5">
-      <property name="text">
-       <string>Volume</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QSlider" name="volumeSlider">
-      <property name="toolTip">
-       <string>Volume Control</string>
-      </property>
-      <property name="toolTipDuration">
-       <number>2</number>
-      </property>
-      <property name="value">
-       <number>50</number>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
      </widget>
     </item>
    </layout>
@@ -359,15 +275,7 @@
   <tabstop>serverIp</tabstop>
   <tabstop>playlistList</tabstop>
   <tabstop>volumeSlider</tabstop>
-  <tabstop>connectPeerBtn</tabstop>
-  <tabstop>localFileList</tabstop>
-  <tabstop>peerFileList</tabstop>
-  <tabstop>peerIp</tabstop>
-  <tabstop>requestFileBtn</tabstop>
   <tabstop>connectPeerVoiceBtn</tabstop>
-  <tabstop>peerVoicePort</tabstop>
-  <tabstop>peerVoiceIp</tabstop>
-  <tabstop>peerPort</tabstop>
  </tabstops>
  <resources/>
  <connections/>
