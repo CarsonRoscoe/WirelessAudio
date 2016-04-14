@@ -11,8 +11,9 @@
 #define CONTROL_PORT        7004
 #define FILENAMESIZE		100
 #define ERRORSIZE			512
-#define CLIENT_PACKET_SIZE  8192
-#define SERVER_PACKET_SIZE  8192
+#define CLIENT_PACKET_SIZE  25600
+#define SERVER_PACKET_SIZE  25600
+#define CONTROL_PACKET_SIZE 256
 #define MAX_CLIENTS         5
 
 ////////////////// Control Channel Flags ///////////////////
