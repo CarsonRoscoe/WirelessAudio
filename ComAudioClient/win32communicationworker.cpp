@@ -12,5 +12,6 @@ void Win32CommunicationWorker::doWork() {
 
             startP2PAudio = false;
         }
+        SleepEx(25, true);
     }
 }

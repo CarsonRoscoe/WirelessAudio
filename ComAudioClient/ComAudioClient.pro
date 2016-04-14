@@ -45,3 +45,6 @@ FORMS    += mainwindow.ui
 
 DISTFILES += \
     ComAudioClient.pro.user
+
+RESOURCES += \
+    sweetjesus.qrc

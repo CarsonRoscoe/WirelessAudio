@@ -33,7 +33,10 @@ void AudioManager::Init(QBuffer * buf, CircularBuffer * circ) {
     format.setSampleType(QAudioFormat::UnSignedInt);
 
     audioOutput = new QAudioOutput(format, parent);
-    audioOutput->setBufferSize(4096 * BUFFERSIZE);
+
+    connect(audioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+
+    audioOutput->setBufferSize(10000000);
     audioOutput->setVolume(volume);
 
     populateBufferWorker = new PopulateBufferWorker(circ, buf);
@@ -41,6 +44,17 @@ void AudioManager::Init(QBuffer * buf, CircularBuffer * circ) {
     connect(&populateBufferThread, SIGNAL(started()), populateBufferWorker, SLOT(doWork()));
     connect(&populateBufferThread, &QThread::finished, populateBufferWorker, &QObject::deleteLater);
     populateBufferThread.start();
+}
+
+void AudioManager::handleStateChanged(QAudio::State newState) {
+    switch (newState) {
+        case QAudio::IdleState:
+            audioOutput->suspend();
+            audioOutput->resume();
+            break;
+        default:
+            break;
+    }
 }
 
 AudioManager::~AudioManager() {
@@ -79,23 +93,27 @@ void AudioManager::receivedWavHeader(wav_hdr wavHeader) {
 
 void AudioManager::playRecord() {
     qDebug() << "Play Record";
-
-    QAudioFormat formatRecord;
     // Set up the desired format, for example:
 
-    formatRecord.setSampleRate(15000);
-    formatRecord.setChannelCount(1);
-    formatRecord.setSampleSize(16);
+    format.setSampleRate(15000);
+    format.setChannelCount(1);
+    format.setSampleSize(16);
 
-    formatRecord.setCodec("audio/pcm");
-    formatRecord.setByteOrder(QAudioFormat::LittleEndian);
-    formatRecord.setSampleType(QAudioFormat::UnSignedInt);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::UnSignedInt);
 
-    audioOutput = new QAudioOutput(formatRecord, parent);
-    audioOutput->setBufferSize(4096 * BUFFERSIZE);
+    if (audioOutput != NULL) {
+        delete audioOutput;
+    }
+    audioOutput = new QAudioOutput(format, parent);
+    connect(audioOutput, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
+    audioOutput->setBufferSize(10000000);
     audioOutput->setVolume(volume);
     songState = Playing;
     buffer->seek(0);
+
+    SleepEx(500, true);
     play();
 }
 
@@ -117,7 +135,11 @@ void AudioManager::stop() {
     delete audioOutput;
     songState = Stopped;
 }
-
+/*
+void AudioManager::changeVolume(int vol) {
+    audioOutput->setVolume(vol);
+}
+*/
 void AudioManager::skip(float seconds) {
     //pause();
     int curPos = buffer->pos();

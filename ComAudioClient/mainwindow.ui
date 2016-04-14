@@ -17,6 +17,9 @@
    <layout class="QGridLayout" name="gridLayout">
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="accessibleName">
+       <string>Tab</string>
+      </property>
       <property name="tabShape">
        <enum>QTabWidget::Rounded</enum>
       </property>
@@ -25,7 +28,7 @@
       </property>
       <widget class="QWidget" name="mediaTab">
        <attribute name="title">
-        <string>Media Player</string>
+        <string> Media Player</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_5">
         <item row="0" column="0" colspan="5">
@@ -47,6 +50,9 @@
         </item>
         <item row="2" column="2">
          <widget class="QPushButton" name="playPauseBtn">
+          <property name="accessibleName">
+           <string>play</string>
+          </property>
           <property name="text">
            <string>Play</string>
           </property>
@@ -61,6 +67,9 @@
         </item>
         <item row="2" column="3">
          <widget class="QPushButton" name="skipFwdBtn">
+          <property name="accessibleName">
+           <string>skip</string>
+          </property>
           <property name="text">
            <string>Skip 10</string>
           </property>
@@ -84,7 +93,7 @@
       </widget>
       <widget class="QWidget" name="fileTransferTab">
        <attribute name="title">
-        <string>File Transfer</string>
+        <string> File Transfer</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_3">
         <item row="2" column="0" colspan="3">
@@ -148,7 +157,7 @@
       </widget>
       <widget class="QWidget" name="radioTab">
        <attribute name="title">
-        <string>Radio</string>
+        <string> Radio</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_2">
         <item row="1" column="0">
@@ -228,7 +237,7 @@
       </widget>
       <widget class="QWidget" name="voiceTab">
        <attribute name="title">
-        <string>Voice Chat</string>
+        <string> Voice Chat</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout_4">
         <item row="0" column="0">
@@ -256,6 +265,9 @@
         </item>
         <item row="0" column="2">
          <widget class="QPushButton" name="connectPeerVoiceBtn">
+          <property name="accessibleName">
+           <string>connect</string>
+          </property>
           <property name="text">
            <string>Connect</string>
           </property>
@@ -272,6 +284,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="stopRecordBtn">
+            <property name="accessibleName">
+             <string>stoptest</string>
+            </property>
             <property name="text">
              <string>Stop Record</string>
             </property>
