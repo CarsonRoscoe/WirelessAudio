@@ -44,6 +44,7 @@ public slots:
     void receivedWavHeader(wav_hdr wavHeader);
     void playRecord();
 
+
 private:
     QAudioFormat format;
     QAudioOutput *audioOutput;

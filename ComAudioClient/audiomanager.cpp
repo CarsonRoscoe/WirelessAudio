@@ -99,7 +99,11 @@ void AudioManager::stop() {
     delete audioOutput;
     songState = Stopped;
 }
-
+/*
+void AudioManager::changeVolume(int vol) {
+    audioOutput->setVolume(vol);
+}
+*/
 void AudioManager::skip(float seconds) {
     //pause();
     int curPos = buffer->pos();

@@ -30,18 +30,33 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    QFile f("sweetbabyjesus.qss");
+        if (!f.exists())
+        {
+            printf("Unable to set stylesheet, file not found\n");
+        }
+        else
+        {
+            f.open(QFile::ReadOnly | QFile::Text);
+            QTextStream ts(&f);
+            qApp->setStyleSheet(ts.readAll());
+        }
+
 
     isRecording = false;
     isPlaying = false;
     lastSong == "";
+
     microphoneBuffer = new QBuffer(parent);
     microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
     listeningBuffer->open(QIODevice::ReadWrite);
+
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
     circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
+
     if (ClientReceiveSetupP2P() != -1)
         ClientListenP2P();
     else
@@ -281,7 +296,6 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    isRecording = true;
    //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
-   //audioFile->start(&dFile);
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
@@ -397,4 +411,12 @@ void MainWindow::on_tabWidget_currentChanged(int index)
     }
 
     CurrentState = static_cast<ProgramState>(index);
+}
+
+void MainWindow::on_volumeSlider_sliderMoved(int position)
+{
+    double temp = position;
+    double dVol=temp/99;
+    qDebug()<<"current vol val:"<<position<<"dvol:"<<dVol;
+    audioManager->setVolume(dVol);
 }
