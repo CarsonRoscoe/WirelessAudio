@@ -166,7 +166,7 @@ int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event)
         return -1;
     }
 
-    qDebug() << "Success!";
+    qDebug() << "Setup success!";
     return 0;
 }
 
@@ -525,10 +525,9 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 
     char slotsize[SERVER_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(SI->DataBuf.buf)) == false)
-    {
-        qDebug() << "Writing received packet to circular buffer failed";
-    }
+
+    while ((circularBufferRecv->pushBack(slotsize)) == false){}
+    while ((circularBufferRecv->pushBack(SI->DataBuf.buf)) == false){}
 
 #ifdef DEBUG_MODE
     qDebug() << "\nBytes received:" << BytesTransferred;
@@ -668,7 +667,6 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
     DWORD byteswrittenfile = 0;
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
-    char delim[6] = {(int)'d', (int)'e', (int)'l', (int)'i', (int)'m', '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
     totalbyteswritten = 0;
@@ -738,7 +736,6 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
 #endif
         }
     }
-    qDebug() << "You shouldn't be here";
     CloseHandle(hReceiveFile);
     hReceiveClosed = 1;
     return TRUE;

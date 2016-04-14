@@ -54,7 +54,7 @@ MainWindow::MainWindow(QWidget *parent) :
     listeningBuffer->open(QIODevice::ReadWrite);
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
-    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(200, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
 //    if (ClientReceiveSetupP2P() != -1)
 //        ClientListenP2P();
@@ -210,9 +210,9 @@ void MainWindow::on_connectServerBtn_clicked()
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
         ui->disconnectServerBtn->setEnabled(true);
-        ui->refreshListBtn->setEnabled(true);
         ui->sendFileBtn->setEnabled(true);
         ui->dwldFileBtn->setEnabled(true);
+        QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
     }
 
     //connect_to_radio();
@@ -225,7 +225,6 @@ void MainWindow::on_disconnectServerBtn_clicked()
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
     ui->disconnectServerBtn->setEnabled(false);
-    ui->refreshListBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
 }
@@ -258,6 +257,7 @@ void MainWindow::play_incoming_stream() {
 void MainWindow::on_refreshListBtn_clicked()
 {
     ClientSendRequest(GET_UPDATE_SONG_LIST);
+    QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
 }
 
 void MainWindow::on_sendFileBtn_clicked()

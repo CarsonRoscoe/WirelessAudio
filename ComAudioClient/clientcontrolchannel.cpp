@@ -92,7 +92,6 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         while(totalb < CONTROL_PACKET_SIZE && recvb != SOCKET_ERROR)
         {
             recvb = recv(controlSock, recvbuff, CONTROL_PACKET_SIZE, 0);
-            qDebug() << "received bytes:" << recvb;
             totalb += recvb;
         }
         if (recvbuff[0] == 0)
