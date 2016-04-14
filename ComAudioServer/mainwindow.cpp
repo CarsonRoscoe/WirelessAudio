@@ -108,7 +108,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 
 
         if (!cb->pop(message)) {
-            qDebug() << "couldn't pop off cb";
+//            qDebug() << "couldn't pop off cb";
             continue;
         }
 
