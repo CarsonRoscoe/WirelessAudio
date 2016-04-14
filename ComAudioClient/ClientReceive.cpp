@@ -285,6 +285,7 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
     while (listenAccept) {
         if ((p2pAcceptSock = accept(p2pListenSock, NULL, NULL)) == INVALID_SOCKET) {
             qDebug() << "ClientListenThread Error:" << WSAGetLastError();
+            return FALSE;
         }
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
             qDebug() << "P2P WSASetEvent failed with error" << WSAGetLastError();

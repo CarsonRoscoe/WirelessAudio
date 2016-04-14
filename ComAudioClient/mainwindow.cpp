@@ -420,7 +420,6 @@ void MainWindow::on_tabWidget_currentChanged(int index)
         }
         listeningBuffer->buffer().resize(0);
         listeningBuffer->reset();
-        listeningBuffer->setBuffer(new QByteArray());
         listeningBuffer->close();
         listeningBuffer->open(QIODevice::ReadWrite);
         break;
