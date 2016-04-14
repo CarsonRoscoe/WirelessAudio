@@ -9,6 +9,7 @@ class PopulateBufferWorker : public QObject {
     Q_OBJECT
 public:
     PopulateBufferWorker(CircularBuffer * circularBuffer, QBuffer * buffer);
+    ~PopulateBufferWorker();
 
 public slots:
     void doWork();
@@ -16,6 +17,7 @@ public slots:
 private:
     CircularBuffer * circularBuffer;
     QBuffer * buffer;
+    bool stayAlive = true;
 };
 
 #endif // POPULATEBUFFERWORKER_H

@@ -1,4 +1,4 @@
-#include "circularbuffer.h"
+#include "../ComAudioClient/circularbuffer.h"
 #include <QDebug>
 #include <QTimer>
 int packetcounter =0;
@@ -20,6 +20,10 @@ CircularBuffer::~CircularBuffer() {
 }
 
 bool CircularBuffer::pushBack(void* item) {
+    if (length == maxLength) {
+        return false;
+    }
+
     memcpy(front, item, elementLength);
     front = (char*)front + elementLength;
     if (front == bufferEnd) {

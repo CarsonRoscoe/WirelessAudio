@@ -18,6 +18,24 @@ void AudioManager::Init(QBuffer * buf, CircularBuffer * circ) {
     buffer = buf;
     qRegisterMetaType<wav_hdr>("wav_hdr");
 
+    if (populateBufferWorker != NULL) {
+        populateBufferWorker->deleteLater();
+        delete populateBufferWorker;
+        populateBufferWorker = NULL;
+    }
+
+    format.setSampleRate(44100);        // 48000
+    format.setChannelCount(2);
+    format.setSampleSize(16);
+
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::UnSignedInt);
+
+    audioOutput = new QAudioOutput(format, parent);
+    audioOutput->setBufferSize(4096 * BUFFERSIZE);
+    audioOutput->setVolume(volume);
+
     populateBufferWorker = new PopulateBufferWorker(circ, buf);
     populateBufferWorker->moveToThread(&populateBufferThread);
     connect(&populateBufferThread, SIGNAL(started()), populateBufferWorker, SLOT(doWork()));
@@ -60,7 +78,7 @@ void AudioManager::receivedWavHeader(wav_hdr wavHeader) {
 }
 
 void AudioManager::playRecord() {
-    qDebug() << "Received Header";
+    qDebug() << "Play Record";
 
     QAudioFormat formatRecord;
     // Set up the desired format, for example:

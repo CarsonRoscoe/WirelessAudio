@@ -56,8 +56,10 @@ private:
     CircularBuffer *circularBuffer;
     QBuffer *buffer;
     ReadFileWorker *readFileWorker;
-    PopulateBufferWorker *populateBufferWorker;
+
+    PopulateBufferWorker *populateBufferWorker = NULL;
     Win32CommunicationWorker *win32CommunicationWorker;
+
     QThread readWorkerThread;
     QThread populateBufferThread;
     QThread win32CommunicationThread;

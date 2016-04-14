@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QFileDialog>
+#include <QString>
 #include <QThread>
 #include "audiomanager.h"
 #include "populatemicrophoneworker.h"
@@ -45,19 +46,23 @@ private slots:
 
     void on_connectServerBtn_clicked();
 
+    void connect_to_radio();
+
+    void play_incoming_stream();
+
     void on_connectPeerVoiceBtn_clicked();
 
     void on_recordBtn_clicked();
 
     void on_stopRecordBtn_clicked();
 
-    void on_connectOutBtn_clicked();
+    void on_disconnectServerBtn_clicked();
 
-    void on_disconnectOutBtn_clicked();
+    void on_refreshListBtn_clicked();
 
-    void on_openInBtn_clicked();
+    void on_dwldFileBtn_clicked();
 
-    void on_closeInBtn_clicked();
+    void updateSongList(const QString &s);
 
     void cleanupp2p();
 

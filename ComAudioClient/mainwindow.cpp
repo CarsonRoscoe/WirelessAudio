@@ -1,6 +1,10 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "Client.h"
+#include "udpthread.h"
+#include "clientudp.h"
+#include "populatemicrophoneworker.h"
+#include "wavheader.h"
 
 #include <QDebug>
 #include <QAudioInput>
@@ -11,6 +15,8 @@
 #include <QPalette>
 #include <QDataStream>
 
+QFile *file;
+
 QFile dFile;
 QAudioInput * audio = NULL;
 QPalette palette;
@@ -18,13 +24,18 @@ QPalette palette;
 //QAudioInput * audioFile;
 CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
+bool isRecording, isPlaying;
 QString lastSong;
-bool isRecording;
-bool isPlaying;
 QByteArray byteArray;
 int curpos=0;
 AudioManager *audioManager;
 ProgramState CurrentState = MediaPlayer;
+
+QThread* multicastThread;
+
+UDPThread* udp_thread;
+
+ClientUDP udpclient;
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -54,13 +65,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
-    circularBufferRecv = new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
-
-    if (ClientReceiveSetupP2P() != -1)
-        ClientListenP2P();
-    else
-        qDebug() << "ClientReceiveSetupP2P Error'd";
 
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
@@ -72,18 +78,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->serverIp->setValidator(val);
     ui->peerVoiceIp->setValidator(val);
     ui->peerIp->setText("192.168.0.7");
-    ui->serverIp->setText("127.0.0.7");
+    ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
-
-    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
-    microphoneWorker->moveToThread(&microphoneThread);
-    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
-    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
-    microphoneThread.start();
-
-    //ui->peerIp->setText("127.0.0.1");
-    //ui->serverIp->setText("127.0.0.1");
-    //ui->peerVoiceIp->setText("127.0.0.1");
 
     get_local_files();
 }
@@ -199,71 +195,88 @@ void MainWindow::on_connectPeerBtn_clicked()
 
 }
 
-void MainWindow::on_sendFileBtn_clicked()
-{
-    QFile *file = new QFile(QFileDialog::getOpenFileName(this, tr("Pick A Song To Send"), 0, tr("Music (*.wav)")));
-    if (file->exists())
-    {
-        file->open(QIODevice::ReadOnly);
-        ClientSend((HANDLE) _get_osfhandle(file->handle()));
-    }
-}
-
 void MainWindow::on_requestFileBtn_clicked()
 {
 
-}
-
-void MainWindow::on_connectOutBtn_clicked()
-{
-    if (ClientSendSetup(ui->peerIp->text().toLatin1().data()) == 0)
-    {
-        ui->connectOutBtn->setEnabled(false);
-        ui->peerIp->setEnabled(false);
-        ui->disconnectOutBtn->setEnabled(true);
-        ui->sendFileBtn->setEnabled(true);
-    }
-}
-
-void MainWindow::on_disconnectOutBtn_clicked()
-{
-    ClientCleanup();
-    ui->connectOutBtn->setEnabled(true);
-    ui->peerIp->setEnabled(true);
-    ui->disconnectOutBtn->setEnabled(false);
-    ui->sendFileBtn->setEnabled(false);
-}
-
-void MainWindow::on_openInBtn_clicked()
-{
-    if (ClientReceiveSetup() == 0)
-    {
-        QFile *file = new QFile(QFileDialog::getSaveFileName(this, tr("Save song as"), 0, tr("Music (*.wav)")));
-        if (file->fileName() != NULL)
-        {
-            ui->openInBtn->setEnabled(false);
-            ui->closeInBtn->setEnabled(true);
-            file->open(QIODevice::WriteOnly);
-            ClientListen((HANDLE) _get_osfhandle(file->handle()));
-        } else
-        {
-            ClientCleanup();
-        }
-    }
-}
-
-void MainWindow::on_closeInBtn_clicked()
-{
-    ui->openInBtn->setEnabled(true);
-    ui->closeInBtn->setEnabled(false);
-    ClientCleanup();
 }
 
 // ---- Radio Streaming Functions ----
 
 void MainWindow::on_connectServerBtn_clicked()
 {
+//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+//            controlSock, CONTROL_PORT)) == 0)
+//    {
+//        strcpy(address, ui->serverIp->text().toLatin1().data());
+//        ui->connectServerBtn->setEnabled(false);
+//        ui->serverIp->setEnabled(false);
+//        ui->disconnectServerBtn->setEnabled(true);
+//        ui->refreshListBtn->setEnabled(true);
+//        ui->sendFileBtn->setEnabled(true);
+//        ui->dwldFileBtn->setEnabled(true);
+//    }
 
+    connect_to_radio();
+}
+
+void MainWindow::on_disconnectServerBtn_clicked()
+{
+    closesocket(controlSock);
+    ClientCleanup();
+    ui->connectServerBtn->setEnabled(true);
+    ui->serverIp->setEnabled(true);
+    ui->disconnectServerBtn->setEnabled(false);
+    ui->refreshListBtn->setEnabled(false);
+    ui->sendFileBtn->setEnabled(false);
+    ui->dwldFileBtn->setEnabled(false);
+}
+
+void MainWindow::connect_to_radio() {
+    multicastThread = new QThread();
+
+    udp_thread = new UDPThread();
+
+    udp_thread->moveToThread(multicastThread);
+
+    //connect(sender, signal, receiver, method, ConnectionType)
+    // TODO: use unique connection...
+    connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()));
+    connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()));
+    connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()));
+
+    udp_thread->udp_thread_request();
+}
+
+bool playing = false;
+void MainWindow::play_incoming_stream() {
+    if (!playing) {
+
+        audioManager->play();
+        playing = true;
+    }
+}
+
+void MainWindow::on_refreshListBtn_clicked()
+{
+    ClientSendRequest(GET_UPDATE_SONG_LIST);
+}
+
+void MainWindow::on_sendFileBtn_clicked()
+{
+    QFile *file = new QFile(QFileDialog::getOpenFileName(this, tr("Pick A Song To Send"), 0, tr("Music (*.wav)")));
+    if (file->exists())
+    {
+        file->open(QIODevice::ReadOnly);
+        hSendFile = (HANDLE)_get_osfhandle(file->handle());
+        QFileInfo fileInfo(file->fileName());
+        strcpy(sendFileName, fileInfo.fileName().toLatin1().data());
+        ClientSendRequest(SEND_SONG_TO_SERVER);
+    }
+}
+
+void MainWindow::on_dwldFileBtn_clicked()
+{
+    ClientSendRequest(GET_SONG_FROM_SERVER);
 }
 
 // ---- PTP Microphone Chat Functions ----
@@ -296,6 +309,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    isRecording = true;
    //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
+
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
@@ -347,8 +361,13 @@ void MainWindow::on_stopRecordBtn_clicked()
     audioManager->playRecord();
     //dFile.close();
     //delete audio;
+
 }
 
+void MainWindow::updateSongList(const QString &s)
+{
+    ui->songList->addItem(s);
+}
 void MainWindow::cleanupp2p()
 {
 
@@ -374,7 +393,6 @@ void MainWindow::cleanupp2p()
 
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
-    //enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
     switch(CurrentState) {
     case MediaPlayer:
         //Invoke MediaPlayer cleanup
@@ -411,6 +429,18 @@ void MainWindow::on_tabWidget_currentChanged(int index)
     }
 
     CurrentState = static_cast<ProgramState>(index);
+
+    switch(CurrentState) {
+        case VoiceChat:
+            if (ClientReceiveSetupP2P() != -1)
+                ClientListenP2P();
+            microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
+            microphoneWorker->moveToThread(&microphoneThread);
+            connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
+            connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
+            microphoneThread.start();
+            break;
+    }
 }
 
 void MainWindow::on_volumeSlider_sliderMoved(int position)

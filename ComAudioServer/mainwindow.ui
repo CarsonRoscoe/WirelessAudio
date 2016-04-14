@@ -15,6 +15,44 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QLineEdit" name="listenPort">
+      <property name="text">
+       <string>7000</string>
+      </property>
+      <property name="placeholderText">
+       <string>Server Port</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="0" colspan="3">
+     <widget class="QPushButton" name="startBroadcastBtn">
+      <property name="text">
+       <string>Start Broadcast</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0" colspan="3">
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QTableWidget" name="clientTable"/>
+      </item>
+     </layout>
+    </item>
+    <item row="0" column="1">
+     <widget class="QPushButton" name="startServerBtn">
+      <property name="text">
+       <string>Start Server</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Connected Clients</string>
+      </property>
+     </widget>
+    </item>
     <item row="4" column="0" colspan="3">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
@@ -40,13 +78,6 @@
       </item>
      </layout>
     </item>
-    <item row="3" column="0" colspan="3">
-     <widget class="QPushButton" name="startBroadcastBtn">
-      <property name="text">
-       <string>Start Broadcast</string>
-      </property>
-     </widget>
-    </item>
     <item row="1" column="0">
      <widget class="QLabel" name="label_2">
       <property name="text">
@@ -54,12 +85,12 @@
       </property>
      </widget>
     </item>
-    <item row="5" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Connected Clients</string>
-      </property>
-     </widget>
+    <item row="8" column="0" colspan="3">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QListWidget" name="consoleList"/>
+      </item>
+     </layout>
     </item>
     <item row="2" column="0" colspan="3">
      <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -68,104 +99,20 @@
       </item>
      </layout>
     </item>
-    <item row="6" column="0" colspan="3">
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <widget class="QTableWidget" name="clientTable"/>
-      </item>
-     </layout>
-    </item>
-    <item row="10" column="0">
+    <item row="7" column="0">
      <widget class="QLabel" name="label_3">
       <property name="text">
        <string>Console</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="0">
-     <widget class="QLineEdit" name="listenPort">
-      <property name="text">
-       <string>7000</string>
-      </property>
-      <property name="placeholderText">
-       <string>Server Port</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QPushButton" name="startServerBtn">
-      <property name="text">
-       <string>Start Server</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="3">
-     <widget class="QPushButton" name="sendFileBtn">
-      <property name="text">
-       <string>Send File</string>
-      </property>
-     </widget>
-    </item>
-    <item row="11" column="0" colspan="3">
-     <layout class="QVBoxLayout" name="verticalLayout">
-      <item>
-       <widget class="QListWidget" name="consoleList"/>
-      </item>
-     </layout>
-    </item>
-    <item row="9" column="0" colspan="2">
-     <layout class="QGridLayout" name="gridLayout_2">
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="openInBtn">
-        <property name="text">
-         <string>Open Incoming</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QPushButton" name="connectOutBtn">
-        <property name="text">
-         <string>Connect Out Going</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="disconnectOutBtn">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Disconnect Out Going</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="closeInBtn">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Close Incoming</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item row="7" column="0" colspan="3">
-     <widget class="QLineEdit" name="ipAddr"/>
-    </item>
    </layout>
    <zorder>listenPort</zorder>
    <zorder>label</zorder>
    <zorder>label_2</zorder>
    <zorder>label_3</zorder>
-   <zorder>sendFileBtn</zorder>
    <zorder>startServerBtn</zorder>
    <zorder>startBroadcastBtn</zorder>
-   <zorder>ipAddr</zorder>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">
@@ -195,7 +142,6 @@
   <tabstop>prevSongBtn</tabstop>
   <tabstop>nextSongBtn</tabstop>
   <tabstop>clientTable</tabstop>
-  <tabstop>sendFileBtn</tabstop>
   <tabstop>consoleList</tabstop>
  </tabstops>
  <resources/>
