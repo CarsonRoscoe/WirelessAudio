@@ -42,6 +42,7 @@ WSAEVENT acceptEvent, defaultEvent = INVALID_HANDLE_VALUE;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
 char recvFileName[100];
+bool closeListen = 1;
 
 ////////////////// Debug vars ///////////////////////////////
 #define DEBUG_MODE
@@ -205,7 +206,8 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
 {
     HANDLE hThread;
     DWORD ThreadId;
-
+    closeListen = 1;
+    qDebug() << "ServerListenThread()";
     if ((hThread = CreateThread(NULL, 0, ServerReceiveThread, lpParameter, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerReceiveThread failed with error %lu\n", GetLastError());
@@ -213,7 +215,7 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
         return FALSE;
     }
 
-    while (TRUE)
+    while (closeListen)
     {
         acceptSock = accept(listenSock, NULL, NULL);
 
@@ -257,9 +259,9 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
     HANDLE hThread;
     DWORD Index, RecvBytes, Flags, LastErr, ThreadId;
     LPSOCKET_INFORMATION SocketInfo;
-
+    qDebug() << "ServerReceiveThread()";
     // Save the accept event in the event array.
-
+    totalbytesreceived = 0;
     EventArray[0] = acceptEvent;
 
     while (TRUE)
@@ -281,6 +283,12 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
                 // An accept() call event is ready - break the wait loop
                 break;
             }
+        }
+
+        if (acceptSock == -1)
+        {
+            qDebug() << "CAUGHT YOU you fucker";
+            return TRUE;
         }
 
         WSAResetEvent(EventArray[Index - WSA_WAIT_EVENT_0]);
@@ -305,7 +313,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
         SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
-        acceptSockClosed = true;
+        acceptSockClosed = 0;
         qDebug() << errMsg;
 
         Flags = 0;
@@ -380,8 +388,9 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
         qDebug() << errMsg;
     }
 
-    if (Error != 0 || BytesTransferred == 0)
+    if (Error != 0 || BytesTransferred == 0 || BytesTransferred == -1)
     {
+        closeListen = 0;
         closesocket(SI->Socket);
         closesocket(listenSock);
         closesocket(acceptSock);
@@ -458,7 +467,8 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     bool lastPacket = false;
     wchar_t *path = (wchar_t *)calloc(100, sizeof(wchar_t));
     mbstowcs(path, recvFileName, 100);
-
+    totalbyteswritten = 0;
+    qDebug() << "ServerWriteToFileThread()";
     CreateDirectory(TEXT("Library"), NULL);
     DeleteFile(path);
     HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW,
@@ -558,11 +568,11 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 ---------------------------------------------------------------------------------------*/
 void ServerCleanup()
 {
-    if (!sendSockClosed)
+    /*if (!sendSockClosed)
     {
         closesocket(sendSock);
         sendSockClosed = 1;
-    }
+    }*/
     if (!acceptSockClosed)
     {
         closesocket(acceptSock);

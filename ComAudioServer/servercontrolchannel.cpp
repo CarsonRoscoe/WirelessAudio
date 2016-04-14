@@ -83,12 +83,21 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
 
     while(true)
     {
+        memset(sendbuff, 0, sizeof(sendbuff));
+        memset(recvbuff, 0, sizeof(sendbuff));
+        memset(message, 0, sizeof(message));
         while(recvb != 0 && recvb != SOCKET_ERROR)
         {
             recvb = recv(Clients[clientID], recvbuff, SERVER_PACKET_SIZE, 0);
             strcat(message, recvbuff);
             qDebug() << "received bytes:" << recvb;
             totalb += recvb;
+            if (recb == -1) {
+                closesocket(Clients[clientID]);
+                free(sendbuff);
+                free(recvbuff);
+                free(message);
+            }
             if (totalb >= SERVER_PACKET_SIZE)
             {
                 switch (message[0])
@@ -96,8 +105,11 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                 case GET_UPDATE_SONG_LIST:
                     GetSongList();
                     for (int i = 0; i < numSongs; i++) {
+                        qDebug() << songList[i];
                         sentb = send(Clients[clientID], songList[i], SERVER_PACKET_SIZE, 0);
                     }
+                    sendbuff[0] = 0;
+                    sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
                     break;
                 case SEND_SONG_TO_SERVER:
                     memmove(message, message+1, strlen(message) - 1);
@@ -108,6 +120,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     listenSockClosed = ServerReceiveSetup(listenSock, SERVER_DEFAULT_PORT, false, acceptEvent);
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
+                    memset(sendbuff + 1, 88, 20);
                     sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
                     ShowLastErr(true);
                     break;

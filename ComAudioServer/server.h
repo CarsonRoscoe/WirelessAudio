@@ -46,7 +46,7 @@ extern SOCKET listenSock, acceptSock;
 extern bool listenSockClosed, acceptSockClosed;
 extern struct sockaddr_in server;
 extern WSAEVENT acceptEvent, defaultEvent;
-extern LPSOCKET_INFORMATION SI;
+//extern LPSOCKET_INFORMATION SI;
 extern char errMsg[ERRORSIZE];
 extern CircularBuffer* circularBufferRecv;
 extern char recvFileName[100];
