@@ -204,11 +204,11 @@ void MainWindow::on_startBroadcastBtn_clicked()
 -- Initializes the UDP multicast socket and launches a ReadFileWorker thread.
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::start_radio() {
-    if (!udpserver.init_socket(4985)) {
+    if (!udpserver.init_socket(MULTICAST_PORT)) {
         qWarning() << "failed to init socket";
     }
 
-    if (!udpserver.init_multicast("234.5.6.7")) {
+    if (!udpserver.init_multicast(MULTICAST_IP)) {
         qWarning() << "failed to set multicast settings";
     }
 

@@ -52,7 +52,6 @@ MainWindow::MainWindow(QWidget *parent) :
             qApp->setStyleSheet(ts.readAll());
         }
 
-
     isRecording = false;
     isPlaying = false;
     lastSong == "";
@@ -307,14 +306,8 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-   //audio->setBufferSize(SERVER_PACKET_SIZE * BUFFERSIZE);
-   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-
-   //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
-   //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
 
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
@@ -324,10 +317,6 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
 void MainWindow::on_recordBtn_clicked()
 {
 
-
-   //byteArray=microphoneBuffer->buffer();
-   //dFile.setFileName("../RecordTest.raw");
-   //dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -376,23 +365,6 @@ void MainWindow::cleanupp2p()
 
         qDebug()<<"cleanup";
 }
-/*void MainWindow::StoreToBuffer(){
-    char tempbuff[CLIENT_PACKET_SIZE];
-    //char *tempbuff = (char *)malloc(CLIENT_PACKET_SIZE);
-
-    microphoneBuffer->seek(curpos);
-    if(microphoneBuffer->bytesAvailable()>=CLIENT_PACKET_SIZE){
-        int bytes= microphoneBuffer->read(tempbuff, CLIENT_PACKET_SIZE);
-        curpos+=bytes;
-        microphoneBuffer->seek(microphoneBuffer->size()-1);
-        qDebug() << "Bytes Available: " << microphoneBuffer->bytesAvailable();
-        qDebug()<<"Push back to buffer her, bytes read:" << bytes;
-
-        if(!micBuf->pushBack(tempbuff)){
-            qDebug()<<"Pushback FAILED";
-        }
-    }
-}*/
 
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
