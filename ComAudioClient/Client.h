@@ -99,8 +99,8 @@ extern LPSOCKET_INFORMATION p2pSI;
 extern char sendFileName[100], recvFileName[100];
 extern char **songList;
 extern SOCKET controlSock;
-extern bool controlSockClosed;
-
+extern bool controlSockClosed, songRequestDone;
+extern int numSongs;
 extern QAudioInput * audio;
 extern int packetcounter;
 

@@ -6,7 +6,7 @@
 #include <QBuffer>
 
 #define BUFFERSIZE 512
-#define CIRCULARBUFFERSIZE 100
+#define CIRCULARBUFFERSIZE 200
 
 //Carson
 class CircularBuffer {

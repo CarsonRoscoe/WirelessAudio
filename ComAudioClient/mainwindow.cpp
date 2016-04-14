@@ -24,7 +24,7 @@ QPalette palette;
 CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording, isPlaying;
-bool playing = false;
+bool playing = false, connectedControl = false;
 QString lastSong;
 QByteArray byteArray;
 int curpos=0;
@@ -204,34 +204,37 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
-//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-//            controlSock, CONTROL_PORT)) == 0)
-//    {
-//        strcpy(address, ui->serverIp->text().toLatin1().data());
+    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+            controlSock, CONTROL_PORT)) == 0)
+    {
+        strcpy(address, ui->serverIp->text().toLatin1().data());
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
+        ui->refreshListBtn->setEnabled(true);
         ui->disconnectServerBtn->setEnabled(true);
         ui->sendFileBtn->setEnabled(true);
         ui->dwldFileBtn->setEnabled(true);
-//    }
-        QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
+        on_refreshListBtn_clicked();
+    }
 
     connect_to_radio();
 }
 
 void MainWindow::on_disconnectServerBtn_clicked()
 {
-//    closesocket(controlSock);
-//    ClientCleanup();
+    closesocket(controlSock);
+    ClientCleanup();
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
+    ui->refreshListBtn->setEnabled(false);
     ui->disconnectServerBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
-
+    ui->playlistList->clear();
     udp_thread->close_socket();
     audioManager->pause();
     playing = false;
+    connectedControl = false;
 }
 
 void MainWindow::connect_to_radio() {
@@ -247,6 +250,7 @@ void MainWindow::connect_to_radio() {
     connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()), Qt::UniqueConnection);
 
     udp_thread->udp_thread_request();
+
 }
 
 void MainWindow::play_incoming_stream() {
@@ -259,8 +263,14 @@ void MainWindow::play_incoming_stream() {
 
 void MainWindow::on_refreshListBtn_clicked()
 {
+    qDebug() << "fuck you qt";
     ClientSendRequest(GET_UPDATE_SONG_LIST);
-    QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
+    while(songRequestDone == 0){}
+    ui->playlistList->clear();
+    for (int i = 0; i < numSongs; i++)
+    {
+        ui->playlistList->addItem(QString::fromLatin1(songList[i]));
+    }
 }
 
 void MainWindow::on_sendFileBtn_clicked()
@@ -278,6 +288,7 @@ void MainWindow::on_sendFileBtn_clicked()
 
 void MainWindow::on_dwldFileBtn_clicked()
 {
+    strcpy(recvFileName, ui->playlistList->currentItem()->text().toLatin1());
     ClientSendRequest(GET_SONG_FROM_SERVER);
 }
 

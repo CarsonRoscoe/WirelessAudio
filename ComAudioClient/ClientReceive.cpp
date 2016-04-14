@@ -51,6 +51,7 @@ int totalbytesreceived, totalbyteswritten;
 
 //////////////////// File Globals /////////////////////////
 bool listenAccept;
+bool safe;
 
 //Carson, designed by Micah
 int ClientReceiveSetupP2P() {
@@ -517,14 +518,19 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
         listenSockClosed = 1;
         acceptSockClosed = 1;
         GlobalFree(SI);
+        totalbytesreceived = 0;
         return;
     }
+
+    SleepEx(10, true);
 
     char slotsize[SERVER_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
 
+    safe = 0;
     while ((circularBufferRecv->pushBack(slotsize)) == false){}
     while ((circularBufferRecv->pushBack(SI->DataBuf.buf)) == false){}
+    safe = 1;
 
 #ifdef DEBUG_MODE
     qDebug() << "\nBytes received:" << BytesTransferred;
@@ -672,10 +678,11 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
 
     while(!lastPacket)
     {
-        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0)
+        if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0 && safe == 1)
         {
             circularBufferRecv->pop(sizeBuf);
             sizeBuf[5] = '\0';
+            qDebug() << "\nsizeBuf:" << sizeBuf;
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
             for (int a = 0, b = 1, c = 2, d = 3, e = 4;
