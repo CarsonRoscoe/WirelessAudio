@@ -76,7 +76,7 @@ AudioManager *audioManager = NULL;
 ProgramState CurrentState = MediaPlayer;
 
 QThread* multicastThread;
-UDPThread* udp_thread;
+UDPThread* udp_thread = NULL;
 
 ClientUDP udpclient;
 
@@ -806,21 +806,22 @@ void MainWindow::cleanupp2p()
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
+    qDebug() << index;
     switch(CurrentState) {
     case MediaPlayer:
+        qDebug() << "MediaPlayer";
         //Invoke MediaPlayer cleanup
         break;
-     case FileTransfer:
-        //Invoke FileTransfer cleanup
-        break;
      case Radio:
-        //Invoke Radio cleanup
-        udp_thread->close_socket();
+        qDebug() << "Radio";
+        if (udp_thread != NULL)
+            udp_thread->close_socket();
         audioManager->pause();
         circularBufferRecv->resetBuffer();
         playing = false;
         break;
      case VoiceChat:
+        qDebug() << "VoiceChat";
         //Invoke VoiceChat cleanup
         CleanupRecvP2P();
         isRecording = false;
@@ -852,7 +853,6 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             } else {
                 qDebug() << "Could not start P2P listening";
             }
-
             break;
     }
 }

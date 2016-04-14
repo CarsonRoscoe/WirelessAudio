@@ -9,7 +9,7 @@
 #include "audiomanager.h"
 #include "populatemicrophoneworker.h"
 
-enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
+enum ProgramState { MediaPlayer = 0, Radio = 1, VoiceChat = 2 };
 
 extern ProgramState CurrentState;
 
