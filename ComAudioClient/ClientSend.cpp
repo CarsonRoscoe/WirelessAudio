@@ -46,7 +46,7 @@ struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
 
 //////////////////// Debug vars ///////////////////////////
-//#define DEBUG_MODE
+#define DEBUG_MODE
 int totalbytessent;
 
 /*---------------------------------------------------------------------------------------
