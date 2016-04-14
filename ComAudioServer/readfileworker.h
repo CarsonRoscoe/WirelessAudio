@@ -4,7 +4,7 @@
 #include <QThread>
 #include <QFile>
 #include "server.h"
-#include "circularbuffer.h"
+#include "../ComAudioClient/circularbuffer.h"
 
 class ReadFileWorker : public QObject {
     Q_OBJECT

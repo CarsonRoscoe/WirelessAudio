@@ -12,17 +12,19 @@ TARGET = ComAudioClient
 TEMPLATE = app
 LIBS = -lws2_32
 
-SOURCES += main.cpp\
+SOURCES += main.cpp \
         mainwindow.cpp \
     audiomanager.cpp \
     circularbuffer.cpp \
+    clientcontrolchannel.cpp \
     ClientReceive.cpp \
     ClientSend.cpp \
     clientudp.cpp \
     populatebufferworker.cpp \
     populatemicrophoneworker.cpp \
     readfileworker.cpp \
-    udpthread.cpp
+    udpthread.cpp \
+    win32communicationworker.cpp
 
 
 HEADERS  += mainwindow.h \
@@ -35,7 +37,8 @@ HEADERS  += mainwindow.h \
     readfileworker.h \
     songstate.h \
     udpthread.h \
-    wavheader.h
+    wavheader.h \
+    win32communicationworker.h
 
 
 FORMS    += mainwindow.ui

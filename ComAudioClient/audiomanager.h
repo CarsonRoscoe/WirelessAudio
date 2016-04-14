@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QMetaType>
 #include <QAudioInput>
+#include "win32communicationworker.h"
 #include "wavheader.h"
 #include "songstate.h"
 #include "circularbuffer.h"
@@ -37,11 +38,11 @@ public:
     void setVolume(float volume);
     void loadSong(QFile * file);
     void stop();
-    void playRecord();
     void Init(QBuffer * buf, CircularBuffer * circ);
 
 public slots:
     void receivedWavHeader(wav_hdr wavHeader);
+    void playRecord();
 
 private:
     QAudioFormat format;
@@ -54,9 +55,13 @@ private:
     CircularBuffer *circularBuffer;
     QBuffer *buffer;
     ReadFileWorker *readFileWorker;
+
     PopulateBufferWorker *populateBufferWorker = NULL;
+    Win32CommunicationWorker *win32CommunicationWorker;
+
     QThread readWorkerThread;
     QThread populateBufferThread;
+    QThread win32CommunicationThread;
     int bytesPerSecond;
 };
 

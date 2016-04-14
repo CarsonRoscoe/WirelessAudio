@@ -39,13 +39,11 @@
 ////////// "Real" of the externs in Client.h ///////////////
 char address[100], p2pAddress[100];
 SOCKET sendSock, p2pSendSock;
-bool sendSockOpen, p2pSendSockOpen;
+bool sendSockClosed = 1, p2pSendSockClosed = 1;
+HANDLE hSendFile;
+bool hSendClosed = 1;
 struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
-
-/////////////////// Globals ////////////////////////////////
-HANDLE hSendFile;
-bool hSendOpen;
 
 //////////////////// Debug vars ///////////////////////////
 //#define DEBUG_MODE
@@ -72,7 +70,7 @@ int totalbytessent;
 --	NOTES:
 --      This function sets up the socket for sending a file to the server
 ---------------------------------------------------------------------------------------*/
-int ClientSendSetup(char* addr)
+int ClientSendSetup(char* addr, SOCKET &sock, int port)
 {
 	WSADATA WSAData;
 	WORD wVersionRequested;
@@ -86,26 +84,19 @@ int ClientSendSetup(char* addr)
         qDebug() << "DLL not found!\n";
 		return -1;
 	}
-
+    qDebug() << "test";
     // TCP Open Socket
-    if ((sendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Cannot create tcp socket\n";
         return -1;
     }
 
-    // UDP Open Socket (if needed in future) ////////////////////
-    /*if ((sendSock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-    {
-        qDebug() << "Cannot create udp socket\n";
-        return -1;
-    }*/
-
 	// Initialize and set up the address structure
     memset((char *)&server, 0, sizeof(struct sockaddr_in));
     server.sin_family = AF_INET;
-    server.sin_port = htons(SERVER_DEFAULT_PORT);
+    server.sin_port = htons(port);
     if ((hp = gethostbyname(address)) == NULL)
 	{
         ShowLastErr(true);
@@ -118,20 +109,19 @@ int ClientSendSetup(char* addr)
 
 	
     // TCP Connecting to the server
-    if (connect(sendSock, (struct sockaddr *)&server, sizeof(server)) == -1)
+    if (connect(sock, (struct sockaddr *)&server, sizeof(server)) == -1)
     {
         ShowLastErr(true);
         qDebug() << "Can't connect to server\n";
         return -1;
     }
 
-    sendSockOpen = true;
-
     qDebug() << "Setup success";
 	return 0;
 }
 
 int ClientSendSetupP2P(char* addr) {
+
     WSADATA WSAData;
     WORD wVersionRequested;
     struct hostent	*hp;
@@ -176,7 +166,7 @@ int ClientSendSetupP2P(char* addr) {
 
     qDebug () << "Connected!";
 
-    p2pSendSockOpen = true;
+    p2pSendSockClosed = 1;
 
     return 0;
 }
@@ -206,7 +196,7 @@ int ClientSend(HANDLE hFile)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hSendOpen = true;
+    hSendClosed = 0;
 
     if ((hThread = CreateThread(NULL, 0, ClientSendThread, (LPVOID)hFile, 0, &ThreadId)) == NULL)
     {
@@ -250,9 +240,7 @@ DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
         }*/
         sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
     }
-
     //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-
     return TRUE;
 }
 
@@ -294,12 +282,13 @@ int ClientSendMicrophoneData() {
 --      end on the server's side.
 ---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
-    hSendFile = (HANDLE) lpParameter;
+    HANDLE hFile = (HANDLE)lpParameter;
     char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
 	DWORD  dwBytesRead;
     int sentBytes = 0;
+    totalbytessent = 0;
 	while (true) {
-        if (ReadFile(hSendFile, sendbuff, CLIENT_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
+        if (ReadFile(hFile, sendbuff, CLIENT_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
 		{
             ShowLastErr(false);
             qDebug() << "Couldn't read file";
@@ -308,7 +297,10 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
         }
 
         if (dwBytesRead == 0) {
-            ClientCleanup();
+            CloseHandle(hFile);
+            closesocket(sendSock);
+            sendSockClosed = 1;
+            free(sendbuff);
             return TRUE;
         }
         else if (dwBytesRead > 0 && dwBytesRead < (DWORD)CLIENT_PACKET_SIZE)
@@ -356,30 +348,45 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
 ---------------------------------------------------------------------------------------*/
 void ClientCleanup()
 {
-    if (sendSockOpen)
+    if (!sendSockClosed)
     {
         closesocket(sendSock);
-        sendSockOpen = false;
+        sendSockClosed = 1;
     }
-    if (listenSockOpen)
+    if (!listenSockClosed)
     {
-        closesocket(listenSockOpen);
-        listenSockOpen = false;
+        closesocket(listenSockClosed);
+        listenSockClosed = 1;
     }
-    if (acceptSockOpen)
+    if (!acceptSockClosed)
     {
         closesocket(acceptSock);
-        acceptSockOpen = false;
+        acceptSockClosed = 1;
     }
-    if (hSendOpen)
+    if (!p2pListenSockClosed)
+    {
+        closesocket(p2pListenSock);
+        p2pListenSockClosed = 1;
+    }
+    if (!p2pAcceptSockClosed)
+    {
+        closesocket(p2pAcceptSock);
+        p2pAcceptSockClosed = 1;
+    }
+    if (!p2pSendSockClosed)
+    {
+        closesocket(p2pSendSock);
+        p2pSendSockClosed = 1;
+    }
+    if (!hSendClosed)
     {
         closesocket(sendSock);
-        hSendOpen = false;
+        hSendClosed = 1;
     }
-    if (hReceiveOpen)
+    if (!hReceiveClosed)
     {
         CloseHandle(hReceiveFile);
-        hReceiveOpen = false;
+        hReceiveClosed = 1;
     }
     WSACleanup();
 }
@@ -422,4 +429,9 @@ void ShowLastErr(bool wsa)
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
         NULL, dlasterr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&errMsg, 0, NULL);
     qDebug() << QString::fromWCharArray(errMsg);
+}
+
+void CleanupSendP2P() {
+    closesocket(p2pSendSock);
+    p2pSendSockClosed = 1;
 }

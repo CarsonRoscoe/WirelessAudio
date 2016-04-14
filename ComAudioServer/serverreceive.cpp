@@ -35,16 +35,17 @@
 #include <QBuffer>
 #include "server.h"
 
-////////// "Real" of the externs in Server.h ///////////////
+////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock;
-bool listenSockOpen, acceptSockOpen;
-WSAEVENT acceptEvent;
-HANDLE hReceiveFile;
-bool hReceiveOpen;
+bool listenSockClosed = 1, acceptSockClosed = 1;
+WSAEVENT acceptEvent, defaultEvent = INVALID_HANDLE_VALUE;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
+char recvFileName[100];
+///////////////// File Globals ////////////////////////////
+bool listenAccept;
 
-////////////////// Debug vars ///////////////////////////////
+////////////////// Debug vars /////////////////////////////
 #define DEBUG_MODE
 int totalbytesreceived, totalbyteswritten;
 
@@ -68,7 +69,7 @@ int totalbytesreceived, totalbyteswritten;
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ServerReceiveSetup()
+int ServerReceiveSetup(SOCKET &sock, int port, bool noEvent, WSAEVENT &event)
 {
     int ret;
     WSADATA wsaData;
@@ -82,30 +83,32 @@ int ServerReceiveSetup()
         return -1;
     }
 
-    // TCP create WSA socket
-    if ((listenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
-        WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
+    if (!noEvent)
     {
-        sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
+        // TCP create WSA socket
+        if ((sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
+            WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
+        {
+            sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
+    } else
+    {
+        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        {
+            sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
     }
-
-    // UDP create WSA socket (if needed in future) ////////////////////////
-    /*if ((listenSock = WSASocket(AF_INET, SOCK_DGRAM, 0, NULL, 0,
-        WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
-    {
-        sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
-    }*/
 
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(SERVER_DEFAULT_PORT);
+    InternetAddr.sin_port = htons(port);
 
-    if (bind(listenSock, (PSOCKADDR)&InternetAddr,
+    if (bind(sock, (PSOCKADDR)&InternetAddr,
         sizeof(InternetAddr)) == SOCKET_ERROR)
     {
         sprintf_s(errMsg, "bind() failed with error %d\n", WSAGetLastError());
@@ -113,19 +116,30 @@ int ServerReceiveSetup()
         return -1;
     }
     // TCP listen on socket (no corresponding UDP call)
-    if (listen(listenSock, 5))
+    if (listen(sock, MAX_CLIENTS))
     {
         sprintf_s(errMsg, "listen() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;
         return -1;
     }
-    listenSockOpen = true;
 
-    if ((acceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT)
+    if (!noEvent)
     {
-        sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
-        qDebug() << errMsg;
-        return -1;
+        if ((event = WSACreateEvent()) == WSA_INVALID_EVENT)
+        {
+            sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
+    } else {
+        HANDLE hThread;
+        DWORD ThreadId;
+        if ((hThread = CreateThread(NULL, 0, ServerCreateControlChannels, 0, 0, &ThreadId)) == NULL)
+        {
+            sprintf_s(errMsg, "Create ServerCreateControlChannels failed with error %lu\n", GetLastError());
+            qDebug() << errMsg;
+            return -1;
+        }
     }
 
     qDebug() << "Success!";
@@ -144,9 +158,7 @@ int ServerReceiveSetup()
 --
 --	PROGRAMMER:		Micah Willems
 --
---  INTERFACE:      int ServerListen(HANDLE hFile)
---
---                        HANDLE hFile: a handle to the file to write the incoming data to
+--  INTERFACE:      int ServerListen()
 --
 --  RETURNS:        Returns 0 on success, -1 on failure
 --
@@ -154,13 +166,12 @@ int ServerReceiveSetup()
 --      This is the qt-friendly (non-threaded) function called by the GUI to start the
 --      listening for and receiving of file transfer data through threaded function calls.
 ---------------------------------------------------------------------------------------*/
-int ServerListen(HANDLE hFile)
+int ServerListen()
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hReceiveOpen = true;
 
-    if ((hThread = CreateThread(NULL, 0, ServerListenThread, (LPVOID) hFile, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ServerListenThread, 0, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerListenThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
@@ -196,7 +207,8 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
 {
     HANDLE hThread;
     DWORD ThreadId;
-
+    listenAccept = 1;
+    qDebug() << "ServerListenThread()";
     if ((hThread = CreateThread(NULL, 0, ServerReceiveThread, lpParameter, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerReceiveThread failed with error %lu\n", GetLastError());
@@ -204,7 +216,7 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
         return FALSE;
     }
 
-    while (TRUE)
+    while (listenAccept)
     {
         acceptSock = accept(listenSock, NULL, NULL);
 
@@ -248,9 +260,9 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
     HANDLE hThread;
     DWORD Index, RecvBytes, Flags, LastErr, ThreadId;
     LPSOCKET_INFORMATION SocketInfo;
-
+    qDebug() << "ServerReceiveThread()";
     // Save the accept event in the event array.
-
+    totalbytesreceived = 0;
     EventArray[0] = acceptEvent;
 
     while (TRUE)
@@ -263,8 +275,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
 
             if (Index == WSA_WAIT_FAILED)
             {
-                sprintf_s(errMsg, "WSAWaitForMultipleEvents failed with error %d\n", WSAGetLastError());
-                qDebug() << errMsg;
+                ShowLastErr(true);
                 return FALSE;
             }
 
@@ -274,6 +285,9 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
                 break;
             }
         }
+
+        if (acceptSock == -1)
+            return TRUE;
 
         WSAResetEvent(EventArray[Index - WSA_WAIT_EVENT_0]);
 
@@ -297,7 +311,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
         SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
-        acceptSockOpen = true;
+        acceptSockClosed = 0;
         qDebug() << errMsg;
 
         Flags = 0;
@@ -372,10 +386,14 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
         qDebug() << errMsg;
     }
 
-    if (Error != 0 || BytesTransferred == 0)
+    if (Error != 0 || BytesTransferred == 0 || BytesTransferred == -1)
     {
+        listenAccept = 0;
         closesocket(SI->Socket);
-        acceptSockOpen = false;
+        closesocket(listenSock);
+        closesocket(acceptSock);
+        listenSockClosed = 1;
+        acceptSockClosed = 1;
         GlobalFree(SI);
         return;
     }
@@ -436,7 +454,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 --      available, to lessen the load on the callback. For each pair of data items it
 --      pulls out, the first is the number that indicates how many bytes is actual data
 --      in the other. The function then checks for the delimeter indicating the last
---      packet, and aftewards writes the data to the open file.
+--      packet, and aftewards writes the data to a file.
 ---------------------------------------------------------------------------------------*/
 DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 {
@@ -445,7 +463,15 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     char writeBuf[CLIENT_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
-    hReceiveFile = (HANDLE) lpParameter;
+    wchar_t *path = (wchar_t *)calloc(100, sizeof(wchar_t));
+    mbstowcs(path, recvFileName, 100);
+    totalbyteswritten = 0;
+    qDebug() << "ServerWriteToFileThread()";
+    CreateDirectory(TEXT("Library"), NULL);
+    DeleteFile(path);
+    HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    free(path);
 
     while(!lastPacket)
     {
@@ -465,7 +491,7 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                             if (writeBuf[d] == 'i') {
                                 if (writeBuf[e] == 'm') {
                                     lastPacket = true;
-                                    packetSize = a - 1;
+                                    packetSize = a;
 #ifdef DEBUG_MODE
                                     qDebug() << "Last packet";
 #endif
@@ -500,19 +526,21 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
                     }
                 }
             }
-            if (WriteFile(hReceiveFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
+            if (WriteFile(hFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
                 qDebug() << "Couldn't write to server file\n";
                 ShowLastErr(false);
                 return FALSE;
             }
 #ifdef DEBUG_MODE
-            qDebug() << "Bytes to write:" << packetSize;
-            qDebug() << "\nBytes written:" << byteswrittenfile;
+            qDebug() << "\nBytes to write:" << packetSize;
+            qDebug() << "Bytes written:" << byteswrittenfile;
             qDebug() << "Total bytes written:" << (totalbyteswritten += byteswrittenfile);
 #endif
         }
     }
+    CloseHandle(hFile);
+    hClosed = 1;
     return TRUE;
 }
 
@@ -538,30 +566,20 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
 ---------------------------------------------------------------------------------------*/
 void ServerCleanup()
 {
-    if (sendSockOpen)
+    /*if (!sendSockClosed)
     {
         closesocket(sendSock);
-        sendSockOpen = false;
-    }
-    if (acceptSockOpen)
+        sendSockClosed = 1;
+    }*/
+    if (!acceptSockClosed)
     {
         closesocket(acceptSock);
-        acceptSockOpen = false;
+        acceptSockClosed = 1;
     }
-    if (listenSockOpen)
+    if (!listenSockClosed)
     {
         closesocket(listenSock);
-        listenSockOpen = false;
-    }
-    if (hReceiveOpen)
-    {
-        CloseHandle(hReceiveFile);
-        hReceiveOpen = false;
-    }
-    if (hSendOpen)
-    {
-        CloseHandle(hSendFile);
-        hSendOpen = false;
+        listenSockClosed = 1;
     }
     WSACleanup();
 }
