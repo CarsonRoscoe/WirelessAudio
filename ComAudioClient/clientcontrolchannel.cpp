@@ -60,21 +60,27 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     switch (flag)
     {
     case GET_UPDATE_SONG_LIST:
+        memset(recvbuff, 0, sizeof(recvbuff));
+        memset(message, 0, sizeof(message));
         sendbuff[0] = flag;
         sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
-        while(recvb != 0 && recvb != SOCKET_ERROR)
+        while(recvb != SOCKET_ERROR)
         {
             recvb = recv(controlSock, recvbuff, SERVER_PACKET_SIZE, 0);
-            songList[i] = new char[100];
+            if (recvbuff[0] == 0)
+            {
+                break;
+            }
             strcat(message, recvbuff);
             totalb += recvb;
             if (totalb >= SERVER_PACKET_SIZE)
             {
+                songList[i] = new char[100];
                 strcpy(songList[i], message);
                 qDebug() << songList[i];
                 i++;
                 totalb -= SERVER_PACKET_SIZE;
-                memset(message, 0, strlen(message));
+                memset(message, 0, sizeof(message));
             }
         }
         break;

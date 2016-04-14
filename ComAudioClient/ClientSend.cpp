@@ -223,6 +223,7 @@ DWORD WINAPI ClientSendThread(LPVOID lpParameter) {
     char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
 	DWORD  dwBytesRead;
     int sentBytes = 0;
+    totalbytessent = 0;
 	while (true) {
         if (ReadFile(hFile, sendbuff, CLIENT_PACKET_SIZE, &dwBytesRead, NULL) == FALSE)
 		{

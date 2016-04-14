@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QFileDialog>
+#include <QString>
 #include "audiomanager.h"
 
 namespace Ui {
@@ -50,6 +51,8 @@ private slots:
     void on_refreshListBtn_clicked();
 
     void on_dwldFileBtn_clicked();
+
+    void updateSongList(const QString &s);
 
 private:
     Ui::MainWindow *ui;
