@@ -34,3 +34,6 @@ FORMS    += mainwindow.ui
 
 DISTFILES += \
     ComAudioServer.pro.user
+
+RESOURCES += \
+    ../ComAudioClient/sweetjesus.qrc
