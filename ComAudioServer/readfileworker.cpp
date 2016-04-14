@@ -97,10 +97,12 @@ void ReadFileWorker::doWork() {
     char data[SERVER_PACKET_SIZE];
     file->open(QIODevice::ReadWrite);
 
-    while (playing) {
-        while(file->read(data, SERVER_PACKET_SIZE) > 0) {
-            while(!circularBuffer->pushBack(data));
+    while(file->read(data, SERVER_PACKET_SIZE) > 0) {
+
+        if (!playing) {
+            break;
         }
+        while(!circularBuffer->pushBack(data));
     }
 
     file->close();

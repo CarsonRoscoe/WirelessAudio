@@ -263,16 +263,20 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 
     char message[SERVER_PACKET_SIZE] = { '\0' };
     memset(message, '\0', sizeof(message));
-
+    int bytesPerSecond = 44100 * 16 / 8 * 2;
+    int bytesRead = 0;
     while (1) {
-
         if (!circularBufferRecv->pop(message)) {
             continue;
         }
-
         if (!serv->broadcast_message(message, &bytes_to_send)) {
             qWarning() << "broadcast failed";
         }
+        bytesRead += bytes_to_send;
+        if (bytesRead < bytesPerSecond)
+            continue;
+        Sleep(400);
+        bytesRead = 0;
     }
 }
 

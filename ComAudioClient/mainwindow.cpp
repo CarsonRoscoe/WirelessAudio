@@ -230,6 +230,7 @@ void MainWindow::on_disconnectServerBtn_clicked()
 
     udp_thread->close_socket();
     audioManager->pause();
+    circularBufferRecv->resetBuffer();
     playing = false;
 }
 
