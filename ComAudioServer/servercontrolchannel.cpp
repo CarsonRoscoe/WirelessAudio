@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <QDebug>
 #include <QString>
+#include <QFile>
+#include <io.h>
 #include "server.h"
 
 ////////// "Real" of the externs in Server.h ///////////////
@@ -79,7 +81,8 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
     char *recvbuff = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
     char *message = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
     int clientID = (int)lpParameter;
-    wchar_t *path;
+    wchar_t path[260];
+    QFile *file;
 
     while(true)
     {
@@ -90,7 +93,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
         {
             recvb = recv(Clients[clientID], recvbuff, CONTROL_PACKET_SIZE, 0);
             strcat(message, recvbuff);
-            qDebug() << "received bytes:" << recvb;
             totalb += recvb;
             if (recvb == -1 || recvb == 0) {
                 qDebug() << "Socket" << Clients[clientID] << "closed";
@@ -108,7 +110,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     GetSongList();
                     memset(sendbuff, 0, sizeof(sendbuff));
                     for (int i = 0; i < numSongs; i++) {
-                        qDebug() << songList[i];
                         strcpy(sendbuff, songList[i]);
                         sentb = send(Clients[clientID], songList[i], CONTROL_PACKET_SIZE, 0);
                     }
@@ -120,7 +121,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     message[strlen(message) - 1] = 0;
                     strcpy(recvFileName, "\.\\Library\\");
                     strcat(recvFileName, message);
-                    qDebug() << recvFileName;
                     listenSockClosed = ServerReceiveSetup(listenSock, SERVER_DEFAULT_PORT, false, acceptEvent);
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
@@ -131,11 +131,12 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                 case GET_SONG_FROM_SERVER:
                     memmove(message, message+1, strlen(message) - 1);
                     message[strlen(message) - 1] = 0;
-                    strcpy(sendFileName, "\.\\Library\\");
+                    strcpy(sendFileName, "./Library/");
                     strcat(sendFileName, message);
-                    qDebug() << sendFileName;
-                    mbtowc(path, sendFileName, 100);
-                    hFile = CreateFile(path, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                    file = new QFile(QString::fromLatin1(sendFileName));
+                    file->open(QIODevice::ReadOnly);
+                    hFile = (HANDLE) _get_osfhandle(file->handle());
+                    ShowLastErr(false);
                     hClosed = 0;
                     sendSockClosed = ServerSendSetup(ipClients[clientID], clientID);
                     ServerSend(clientID);

@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <QMetaType>
 #include <QAudioInput>
+#include <QTimer>
 #include "win32communicationworker.h"
 #include "wavheader.h"
 #include "songstate.h"
@@ -21,8 +22,6 @@ extern QPalette palette;
 extern QAudioInput * audioFile;
 extern CircularBuffer * cb, *circularBufferRecv, *micBuf;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
-
-extern QAudioInput *audio;
 
 //Carson
 class AudioManager : public QObject {
@@ -40,20 +39,23 @@ public:
     void stop();
     void Init(QBuffer * buf, CircularBuffer * circ);
 
+    QBuffer *buffer;
+    QAudioOutput *audioOutput = NULL;
+
 public slots:
     void receivedWavHeader(wav_hdr wavHeader);
     void playRecord();
+    void handleStateChanged(QAudio::State newState);
+
 
 private:
     QAudioFormat format;
-    QAudioOutput *audioOutput;
     QObject *parent;
     QFile *file;
     QIODevice *device;
     float volume = 10;
     SongState songState;
     CircularBuffer *circularBuffer;
-    QBuffer *buffer;
     ReadFileWorker *readFileWorker;
 
     PopulateBufferWorker *populateBufferWorker = NULL;

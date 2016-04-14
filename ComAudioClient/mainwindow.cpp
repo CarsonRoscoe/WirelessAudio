@@ -28,7 +28,7 @@ bool playing = false;
 QString lastSong;
 QByteArray byteArray;
 int curpos=0;
-AudioManager *audioManager;
+AudioManager *audioManager = NULL;
 ProgramState CurrentState = MediaPlayer;
 
 QThread* multicastThread;
@@ -40,6 +40,18 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    QFile f("../sweetbabyjesus.qss");
+        if (!f.exists())
+        {
+            printf("Unable to set stylesheet, file not found\n");
+        }
+        else
+        {
+            f.open(QFile::ReadOnly | QFile::Text);
+            QTextStream ts(&f);
+            qApp->setStyleSheet(ts.readAll());
+        }
+
 
     isRecording = false;
     isPlaying = false;
@@ -48,17 +60,13 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
-    //p2pListenSockClosed = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
-    //ClientListenP2P();
+    listeningBuffer->buffer().reserve(10000000);
     listeningBuffer->open(QIODevice::ReadWrite);
+
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
-    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(200, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
-//    if (ClientReceiveSetupP2P() != -1)
-//        ClientListenP2P();
-//    else
-//        qDebug() << "ClientReceiveSetupP2P Error'd";
 
     QRegExp regex;
     regex.setPattern("^(([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))\\.){3}([01]?[0-9]?[0-9]|2([0-4][0-9]|5[0-5]))$");
@@ -72,12 +80,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
-
-    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
-    microphoneWorker->moveToThread(&microphoneThread);
-    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
-    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
-    microphoneThread.start();
 
     get_local_files();
 }
@@ -209,10 +211,10 @@ void MainWindow::on_connectServerBtn_clicked()
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
         ui->disconnectServerBtn->setEnabled(true);
-        ui->refreshListBtn->setEnabled(true);
         ui->sendFileBtn->setEnabled(true);
         ui->dwldFileBtn->setEnabled(true);
 //    }
+        QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
 
     connect_to_radio();
 }
@@ -224,7 +226,6 @@ void MainWindow::on_disconnectServerBtn_clicked()
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
     ui->disconnectServerBtn->setEnabled(false);
-    ui->refreshListBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
 
@@ -259,6 +260,7 @@ void MainWindow::play_incoming_stream() {
 void MainWindow::on_refreshListBtn_clicked()
 {
     ClientSendRequest(GET_UPDATE_SONG_LIST);
+    QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
 }
 
 void MainWindow::on_sendFileBtn_clicked()
@@ -283,10 +285,15 @@ void MainWindow::on_dwldFileBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
+    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
+    microphoneWorker->moveToThread(&microphoneThread);
+    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
+    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
+    microphoneThread.start();
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
-   format.setSampleRate(16000);
+   format.setSampleRate(15000);
    format.setChannelCount(1);
    format.setSampleSize(16);
    format.setCodec("audio/pcm");
@@ -309,11 +316,7 @@ void MainWindow::on_connectPeerVoiceBtn_clicked()
    isRecording = true;
    //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    audio->start(microphoneBuffer);
-   audioManager->playRecord();
 
-   p2pSendSockClosed = ClientSendSetup(ui->peerVoiceIp->text().toLatin1().data(),
-                                        p2pSendSock, P2P_DEFAULT_PORT);
-   //audioFile->start(&dFile);
    ClientSendSetupP2P(ui->peerVoiceIp->text().toLatin1().data());
    ClientSendMicrophoneData();
 }
@@ -323,8 +326,8 @@ void MainWindow::on_recordBtn_clicked()
 
 
    //byteArray=microphoneBuffer->buffer();
-   dFile.setFileName("../RecordTest.raw");
-   dFile.open( QIODevice::ReadWrite);
+   //dFile.setFileName("../RecordTest.raw");
+   //dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -342,18 +345,14 @@ void MainWindow::on_recordBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-    audio->setNotifyInterval(1);
-   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-   connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
-   //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
+   microphoneBuffer->buffer().resize(0);
+   microphoneBuffer->reset();
+   microphoneBuffer->setBuffer(new QByteArray());
+   microphoneBuffer->close();
+   microphoneBuffer->open(QIODevice::ReadWrite);
    isRecording = true;
    audio->start(microphoneBuffer);
-  // if(packetcounter>10)
-
-   //audioFile->start(&dFile);
-
 }
 
 void MainWindow::on_stopRecordBtn_clicked()
@@ -397,7 +396,6 @@ void MainWindow::cleanupp2p()
 
 void MainWindow::on_tabWidget_currentChanged(int index)
 {
-    //enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
     switch(CurrentState) {
     case MediaPlayer:
         //Invoke MediaPlayer cleanup
@@ -419,19 +417,36 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             delete audio;
             audio = NULL;
             micSendPacket = 0;
+            micPos = 0;
         }
-       /* listeningBuffer->
+        listeningBuffer->buffer().resize(0);
         listeningBuffer->reset();
         listeningBuffer->close();
         listeningBuffer->open(QIODevice::ReadWrite);
-        */
-        ClientReceiveSetupP2P();
-        ClientListenP2P();
-
         break;
     default:
         qDebug()<<"This state should never happen?";
     }
 
     CurrentState = static_cast<ProgramState>(index);
+
+    switch(CurrentState) {
+        case VoiceChat:
+            if (ClientReceiveSetupP2P() != -1) {
+                ClientListenP2P();
+                qDebug() << "Started up P2P listening";
+            } else {
+                qDebug() << "Could not start P2P listening";
+            }
+
+            break;
+    }
+}
+
+void MainWindow::on_volumeSlider_sliderMoved(int position)
+{
+    double temp = position;
+    double dVol=temp/99;
+    qDebug()<<"current vol val:"<<position<<"dvol:"<<dVol;
+    audioManager->setVolume(dVol);
 }
