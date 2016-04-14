@@ -39,8 +39,8 @@ void MainWindow::load_local_files() {
     QStringList nameFilter("*.wav");
     QDir directory(QDir::currentPath());
 
-    if (!directory.cd("../AudioFiles")) {
-        qWarning() << "Can't find /AudioFiles directory!";
+    if (!directory.cd("./Library/")) {
+        qWarning() << "Can't find Library directory!";
         return;
     }
 
@@ -108,7 +108,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 
 
         if (!cb->pop(message)) {
-            qDebug() << "couldn't pop off cb";
+//            qDebug() << "couldn't pop off cb";
             continue;
         }
 

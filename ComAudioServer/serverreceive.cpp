@@ -142,7 +142,7 @@ int ServerReceiveSetup(SOCKET &sock, int port, bool noEvent, WSAEVENT &event)
         }
     }
 
-    qDebug() << "Success!";
+    qDebug() << "Setup success!";
     return 0;
 }
 
@@ -208,7 +208,6 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
     HANDLE hThread;
     DWORD ThreadId;
     listenAccept = 1;
-    qDebug() << "ServerListenThread()";
     if ((hThread = CreateThread(NULL, 0, ServerReceiveThread, lpParameter, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerReceiveThread failed with error %lu\n", GetLastError());
@@ -260,7 +259,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
     HANDLE hThread;
     DWORD Index, RecvBytes, Flags, LastErr, ThreadId;
     LPSOCKET_INFORMATION SocketInfo;
-    qDebug() << "ServerReceiveThread()";
+
     // Save the accept event in the event array.
     totalbytesreceived = 0;
     EventArray[0] = acceptEvent;
@@ -400,10 +399,9 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 
     char slotsize[CLIENT_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(SI->DataBuf.buf)) == false)
-    {
-        qDebug() << "Writing received packet to circular buffer failed";
-    }
+
+    while ((circularBufferRecv->pushBack(slotsize)) == false){}
+    while ((circularBufferRecv->pushBack(SI->DataBuf.buf)) == false){}
 
 #ifdef DEBUG_MODE
     qDebug() << "\nBytes received:" << BytesTransferred;
@@ -466,7 +464,6 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
     wchar_t *path = (wchar_t *)calloc(100, sizeof(wchar_t));
     mbstowcs(path, recvFileName, 100);
     totalbyteswritten = 0;
-    qDebug() << "ServerWriteToFileThread()";
     CreateDirectory(TEXT("Library"), NULL);
     DeleteFile(path);
     HANDLE hFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW,
@@ -528,8 +525,8 @@ DWORD WINAPI ServerWriteToFileThread(LPVOID lpParameter)
             }
             if (WriteFile(hFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
-                qDebug() << "Couldn't write to server file\n";
                 ShowLastErr(false);
+                qDebug() << "Couldn't write to server file\n";
                 return FALSE;
             }
 #ifdef DEBUG_MODE
