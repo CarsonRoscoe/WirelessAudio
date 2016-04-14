@@ -75,9 +75,9 @@ DWORD WINAPI ServerCreateControlChannels(LPVOID lpParameter)
 DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
 {
     int sentb = 0, recvb = 1, totalb = 0;
-    char *sendbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
-    char *recvbuff = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
-    char *message = (char *)calloc(SERVER_PACKET_SIZE + 1, sizeof(char));
+    char *sendbuff = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
+    char *recvbuff = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
+    char *message = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
     int clientID = (int)lpParameter;
     wchar_t *path;
 
@@ -88,29 +88,32 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
         memset(message, 0, sizeof(message));
         while(recvb != 0 && recvb != SOCKET_ERROR)
         {
-            recvb = recv(Clients[clientID], recvbuff, SERVER_PACKET_SIZE, 0);
+            recvb = recv(Clients[clientID], recvbuff, CONTROL_PACKET_SIZE, 0);
             strcat(message, recvbuff);
             qDebug() << "received bytes:" << recvb;
             totalb += recvb;
-            if (recvb == -1) {
+            if (recvb == -1 || recvb == 0) {
+                qDebug() << "Socket" << Clients[clientID] << "closed";
                 closesocket(Clients[clientID]);
                 free(sendbuff);
                 free(recvbuff);
                 free(message);
                 return TRUE;
             }
-            if (totalb >= SERVER_PACKET_SIZE)
+            if (totalb >= CONTROL_PACKET_SIZE)
             {
                 switch (message[0])
                 {
                 case GET_UPDATE_SONG_LIST:
                     GetSongList();
+                    memset(sendbuff, 0, sizeof(sendbuff));
                     for (int i = 0; i < numSongs; i++) {
                         qDebug() << songList[i];
-                        sentb = send(Clients[clientID], songList[i], SERVER_PACKET_SIZE, 0);
+                        strcpy(sendbuff, songList[i]);
+                        sentb = send(Clients[clientID], songList[i], CONTROL_PACKET_SIZE, 0);
                     }
                     sendbuff[0] = 0;
-                    sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
+                    sentb = send(Clients[clientID], sendbuff, CONTROL_PACKET_SIZE, 0);
                     break;
                 case SEND_SONG_TO_SERVER:
                     memmove(message, message+1, strlen(message) - 1);
@@ -122,7 +125,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
                     memset(sendbuff + 1, 88, 20);
-                    sentb = send(Clients[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
+                    sentb = send(Clients[clientID], sendbuff, CONTROL_PACKET_SIZE, 0);
                     ShowLastErr(true);
                     break;
                 case GET_SONG_FROM_SERVER:
@@ -141,7 +144,7 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     break;
                 }
                 memset(message, 0, sizeof(message));
-                totalb -= SERVER_PACKET_SIZE;
+                totalb -= CONTROL_PACKET_SIZE;
             }
         }
     }
