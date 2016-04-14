@@ -67,6 +67,8 @@ private slots:
 
     void on_volumeSlider_sliderMoved(int position);
 
+    void on_connectToMultiBtn_clicked();
+
 private:
     Ui::MainWindow *ui;
     PopulateMicrophoneWorker *microphoneWorker;

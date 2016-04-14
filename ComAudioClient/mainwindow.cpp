@@ -429,8 +429,6 @@ void MainWindow::on_connectServerBtn_clicked()
         ui->dwldFileBtn->setEnabled(true);
         on_refreshListBtn_clicked();
     }
-
-    connect_to_radio();
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: on_disconnectServerBtn_clicked()
@@ -467,6 +465,31 @@ void MainWindow::on_disconnectServerBtn_clicked()
     playing = false;
     connectedControl = false;
 }
+
+
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_connectToMultiBtn_clicked()
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE:on_connectToMultiBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- This is the connect to radio server to start receiving the broadcast.
+----------------------------------------------------------------------------------------------------------------------*/
+void MainWindow::on_connectToMultiBtn_clicked()
+{
+    connect_to_radio();
+}
+
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: connect_to_radio()
 --
@@ -858,3 +881,4 @@ void MainWindow::on_volumeSlider_sliderMoved(int position)
     qDebug()<<"current vol val:"<<position<<"dvol:"<<dVol;
     audioManager->setVolume(dVol);
 }
+
