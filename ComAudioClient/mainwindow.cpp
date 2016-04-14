@@ -41,7 +41,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
-    QFile f("sweetbabyjesus.qss");
+    QFile f("../sweetbabyjesus.qss");
         if (!f.exists())
         {
             printf("Unable to set stylesheet, file not found\n");
