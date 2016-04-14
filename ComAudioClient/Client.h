@@ -4,7 +4,12 @@
 #include <winsock2.h>
 #include <windows.h>
 #include "circularbuffer.h"
+#include "audiomanager.h"
+#include "win32communicationworker.h"
 #include <QBuffer>
+#include <iostream>
+#include <fstream>
+#include <QAudioInput>
 
 ///////////////////// Global Prototypes ///////////////////
 // Sending Prototypes
@@ -26,9 +31,10 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter);
 //P2P
 int ClientSendMicrophoneData();
 int ClientListenP2P();
+void CleanupRecvP2P();
+void CleanupSendP2P();
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter);
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter);
-DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter);
 void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 // Control Channel
 int ClientSendRequest(int flag);
@@ -42,8 +48,8 @@ extern void *app;
 #define CONTROL_PORT        7004
 #define FILENAMESIZE        100
 #define ERRORSIZE           512
-#define CLIENT_PACKET_SIZE  8192
-#define SERVER_PACKET_SIZE  8192
+#define CLIENT_PACKET_SIZE  25600
+#define SERVER_PACKET_SIZE  25600
 
 ////////////////// Control Channel Flags ///////////////////
 #define GET_UPDATE_SONG_LIST    1
@@ -70,6 +76,7 @@ extern struct sockaddr_in server;
 extern char errMsg[ERRORSIZE];
 extern bool isRecording;
 extern QBuffer *microphoneBuffer, *listeningBuffer;
+extern CircularBuffer * micBuf;
 // Receiving
 extern SOCKET listenSock, acceptSock;
 extern bool listenSockClosed, acceptSockClosed;
@@ -90,5 +97,8 @@ extern char sendFileName[100], recvFileName[100];
 extern char **songList;
 extern SOCKET controlSock;
 extern bool controlSockClosed;
+
+extern QAudioInput * audio;
+extern int packetcounter;
 
 #endif

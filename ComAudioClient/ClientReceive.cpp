@@ -33,6 +33,8 @@
 #include <QString>
 #include <QBuffer>
 #include "Client.h"
+#include <QFile>
+#include <QTextStream>
 
 ////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
@@ -41,13 +43,59 @@ WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
 bool hReceiveClosed = 1;
 LPSOCKET_INFORMATION SI, p2pSI;
-
-//////////////////// File Globals /////////////////////////
-bool listenAccept;
+bool start;
 
 //////////////////// Debug vars ///////////////////////////
 #define DEBUG_MODE
 int totalbytesreceived, totalbyteswritten;
+
+//////////////////// File Globals /////////////////////////
+bool listenAccept;
+
+//Carson, designed by Micah
+int ClientReceiveSetupP2P() {
+    int ret;
+    WSADATA wsaData;
+    SOCKADDR_IN InternetAddr;
+
+    start = false;
+
+    if ((ret = WSAStartup(0x0202, &wsaData)) != 0) {
+        qDebug() << "WSAStartup failed with error " << ret;
+        WSACleanup();
+        return -1;
+    }
+
+    // TCP create WSA socket
+    if ((p2pListenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET) {
+        qDebug() << "Failed tog et a socket " << WSAGetLastError();
+        return -1;
+    }
+
+    InternetAddr.sin_family = AF_INET;
+    InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
+
+    if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
+        qDebug() << "bind) failed with error " << WSAGetLastError();
+        return -1;
+    }
+
+    // TCP listen on socket
+    if (listen(p2pListenSock, 5)) {
+        qDebug() << "listen() failed with error " << WSAGetLastError();
+        return -1;
+    }
+
+    p2pListenSockOpen = true;
+
+    if ((p2pAcceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
+        qDebug() << "WSACreateEvent() failed with error " << WSAGetLastError();
+        return -1;
+    }
+}
+
+
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientReceiveSetup
@@ -234,6 +282,7 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
         return FALSE;
     }
 
+
     while (listenAccept) {
         p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
         qDebug() << "P2P Accepted a request";
@@ -401,16 +450,12 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
 
     Flags = 0;
     // TCP WSA receive
+
     if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, &(SocketInfo->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return FALSE;
         }
-    }
-
-    if ((hThread = CreateThread(NULL, 0, ClientWriteToFileThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
-        qDebug() << "Create ServerWriteToFileThread failed with error " << GetLastError();
-        return FALSE;
     }
 
     SleepEx(10000, true);
@@ -508,12 +553,27 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
+void CleanupRecvP2P() {
+    GlobalFree(p2pSI);
+    closesocket(p2pListenSock);
+    closesocket(p2pAcceptSock);
+    p2pListenSockOpen = false;
+    p2pAcceptSockOpen = false;
+    listeningBuffer->buffer().clear();
+    listeningBuffer->buffer().resize(0);
+    listeningBuffer->close();
+    listeningBuffer->setBuffer(new QByteArray());
+    listeningBuffer->seek(listeningBuffer->size());
+    listeningBuffer->open(QIODevice::ReadWrite);
+    isRecording = false;
+    qDebug()<<"CleanupP2P invoked";
+}
+
 //Carson, designed by Micah
-void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
-                                LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
+void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
-    p2pSI = (LPSOCKET_INFORMATION)Overlapped;
+    LPSOCKET_INFORMATION p2pSI = (LPSOCKET_INFORMATION)Overlapped;
 
     if (Error != 0)
         qDebug() << "I/O operation failed with error " << Error;
@@ -526,28 +586,31 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         GlobalFree(p2pSI);
         return;
     }
+      if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
+          qDebug() << "error pushing back CR " << p2pSI->Socket;
+        Flags = 0;
 
-    char slotsize[SERVER_PACKET_SIZE];
-    sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
-        qDebug() << "Writing received packet to circular buffer failed";
+     if (!start) {
+        startP2PAudio = true;
+        start = true;
+     }
 
-    Flags = 0;
-    ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
+    if(packetcounter==146){
+        CleanupRecvP2P();
+        ClientReceiveSetupP2P();
+        ClientListenP2P();
+        packetcounter = 0;
+        return;
+    }
 
-    p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
-    p2pSI->DataBuf.buf = p2pSI->Buffer;
-
-    SleepEx(10, true);
-    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
         } else {
-            SleepEx(10000, true);
+            SleepEx(25000, true);
         }
     }
-
 }
 
 //Carson, designed by Micah
@@ -572,7 +635,6 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
     }
     return TRUE;
 }
-
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientWriteToFileThread

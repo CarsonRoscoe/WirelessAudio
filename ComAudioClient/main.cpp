@@ -13,4 +13,5 @@ int main(int argc, char *argv[])
     QListWidget *lw = w.findChild<QListWidget*>("songList");
 
     return a.exec();
+
 }

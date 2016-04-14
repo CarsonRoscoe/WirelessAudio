@@ -5,7 +5,13 @@
 #include <QDebug>
 #include <QFileDialog>
 #include <QString>
+#include <QThread>
 #include "audiomanager.h"
+#include "populatemicrophoneworker.h"
+
+enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
+
+extern ProgramState CurrentState;
 
 namespace Ui {
 class MainWindow;
@@ -54,9 +60,19 @@ private slots:
 
     void updateSongList(const QString &s);
 
+    void cleanupp2p();
+
+    void on_tabWidget_currentChanged(int index);
+
+
 private:
     Ui::MainWindow *ui;
+    PopulateMicrophoneWorker *microphoneWorker;
+    QThread microphoneThread;
     AudioManager *audioManager;
+
+    void get_local_files();
+    QString get_selected_list_item(int tab);
 };
 
 #endif // MAINWINDOW_H

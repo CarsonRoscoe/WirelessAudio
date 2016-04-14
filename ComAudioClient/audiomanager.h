@@ -6,11 +6,23 @@
 #include <QFile>
 #include <QDebug>
 #include <QMetaType>
+#include <QAudioInput>
+#include "win32communicationworker.h"
 #include "wavheader.h"
 #include "songstate.h"
 #include "circularbuffer.h"
 #include "readfileworker.h"
 #include "populatebufferworker.h"
+#include "Client.h"
+
+extern QAudioInput * audio;
+extern QPalette palette;
+
+extern QAudioInput * audioFile;
+extern CircularBuffer * cb, *circularBufferRecv, *micBuf;
+extern QBuffer *microphoneBuffer, *listeningBuffer;
+
+extern QAudioInput *audio;
 
 //Carson
 class AudioManager : public QObject {
@@ -26,15 +38,15 @@ public:
     void setVolume(float volume);
     void loadSong(QFile * file);
     void stop();
-    void playRecord();
-    void Init(QBuffer * buf);
+    void Init(QBuffer * buf, CircularBuffer * circ);
 
 public slots:
     void receivedWavHeader(wav_hdr wavHeader);
+    void playRecord();
 
 private:
     QAudioFormat format;
-    QAudioOutput *audio;
+    QAudioOutput *audioOutput;
     QObject *parent;
     QFile *file;
     QIODevice *device;
@@ -44,9 +56,13 @@ private:
     QBuffer *buffer;
     ReadFileWorker *readFileWorker;
     PopulateBufferWorker *populateBufferWorker;
+    Win32CommunicationWorker *win32CommunicationWorker;
     QThread readWorkerThread;
     QThread populateBufferThread;
+    QThread win32CommunicationThread;
     int bytesPerSecond;
 };
+
+extern AudioManager *audioManager;
 
 #endif // AUDIOMANAGER_H

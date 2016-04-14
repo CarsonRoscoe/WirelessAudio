@@ -32,7 +32,8 @@
 #include <stdio.h>
 #include <QDebug>
 #include "Client.h"
-
+#include <QFile>
+#include <QTextStream>
 //#pragma comment(lib, "Ws2_32.lib")
 
 ////////// "Real" of the externs in Client.h ///////////////
@@ -45,7 +46,7 @@ struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
 
 //////////////////// Debug vars ///////////////////////////
-#define DEBUG_MODE
+//#define DEBUG_MODE
 int totalbytessent;
 
 /*---------------------------------------------------------------------------------------
@@ -119,6 +120,57 @@ int ClientSendSetup(char* addr, SOCKET &sock, int port)
 	return 0;
 }
 
+int ClientSendSetupP2P(char* addr) {
+
+    WSADATA WSAData;
+    WORD wVersionRequested;
+    struct hostent	*hp;
+    strcpy(p2pAddress, addr);
+
+    wVersionRequested = MAKEWORD(2, 2);
+    if (WSAStartup(wVersionRequested, &WSAData) != 0) {
+        ShowLastErr(true);
+        qDebug() << "DLL not found";
+        return -1;
+    }
+
+    // TCP Open Socket
+    if ((p2pSendSock = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+        ShowLastErr(true);
+        qDebug() << "Cannot create tcp socket";
+        return -1;
+    }
+
+    // Initialize and set up the address structure
+    memset((char *)&otherClient, 0, sizeof(struct sockaddr_in));
+    otherClient.sin_family = AF_INET;
+    otherClient.sin_port = htons(P2P_DEFAULT_PORT);
+    if ((hp = gethostbyname(p2pAddress)) == NULL) {
+        ShowLastErr(true);
+        qDebug() << "Unknown server address";
+        return -1;
+    }
+
+
+    // Copy the server address
+    memcpy((char *)&otherClient.sin_addr, hp->h_addr, hp->h_length);
+
+    qDebug () << "Attempting to accept request to ip " << p2pAddress << " on port " << P2P_DEFAULT_PORT;
+
+    // TCP Connecting to the  server
+    if (connect(p2pSendSock, (struct sockaddr *)&otherClient, sizeof(otherClient)) == -1) {
+        ShowLastErr(true);
+        qDebug() << "Can't connect to server";
+        return -1;
+    }
+
+    qDebug () << "Connected!";
+
+    p2pSendSockOpen = true;
+
+    return 0;
+}
+
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientSend
 --
@@ -158,26 +210,37 @@ int ClientSend(HANDLE hFile)
 //Written by Carson, designed by Micah since it follows her other thread design
 DWORD WINAPI ClientSendMicrophoneThread(LPVOID lpParameter) {
     hSendFile = (HANDLE) lpParameter;
-    char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    //char *sendbuff = (char *)calloc(CLIENT_PACKET_SIZE + 1, sizeof(char));
+    char sendbuff[CLIENT_PACKET_SIZE]= { '\0'};
     DWORD  dwBytesRead;
     int sentBytes = 0;
-
-    while (isRecording) {
-        microphoneBuffer->seek(0);
-        dwBytesRead = microphoneBuffer->read(sendbuff, CLIENT_PACKET_SIZE);
-
-        if (dwBytesRead > 0) {
-            // TCP Send
-            sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-            ShowLastErr(true);
-        }
-
-        microphoneBuffer->seek(microphoneBuffer->size()-1);
+    //memset(sendbuff,'\0',sizeof(sendbuff));
+     memset(sendbuff,'\0',sizeof(sendbuff));
+    QString filename = "RecordBufferdata2.txt";
+    QFile file(filename);
+    if(!file.open(QIODevice::ReadWrite)){
+        qDebug()<< "Error, File didn't open";
     }
+    QTextStream stream(&file);
+    while (isRecording) {
+        if (!micBuf->pop(sendbuff)) {
+           continue;
+        }
+        //file.write(sendbuff, CLIENT_PACKET_SIZE);
+        /*if (dwBytesRead > 0 && dwBytesRead < CLIENT_PACKET_SIZE - 5)
+        {
+            //stream<<sendbuff;
 
-    sprintf(sendbuff, "%c%c%c", (char)4, (char)4, (char)4);
-    sentBytes = send(sendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
-    free(sendbuff);
+            sendbuff[dwBytesRead] = 'm';
+            sendbuff[dwBytesRead+1] = 'i';
+            sendbuff[dwBytesRead+2] = 'l';
+            sendbuff[dwBytesRead+3] = 'e';
+            sendbuff[dwBytesRead+4] = 'd';
+             //qDebug() << "Reading stuff";
+        }*/
+        sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
+    }
+    //sentBytes = send(p2pSendSock, sendbuff, CLIENT_PACKET_SIZE, 0);
     return TRUE;
 }
 
@@ -361,9 +424,14 @@ void ShowLastErr(bool wsa)
     else {
         dlasterr = GetLastError();
     }
-    sprintf_s(errnum, "Error number: %d\n", dlasterr);
+    sprintf_s(errnum, "Error number: %d", dlasterr);
     qDebug() << errnum;
     FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
         NULL, dlasterr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&errMsg, 0, NULL);
     qDebug() << QString::fromWCharArray(errMsg);
+}
+
+void CleanupSendP2P() {
+    closesocket(p2pSendSock);
+    p2pSendSockOpen = false;
 }
