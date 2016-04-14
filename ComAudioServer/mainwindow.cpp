@@ -170,7 +170,7 @@ void MainWindow::load_local_files() {
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startServerBtn_clicked()
 {
-
+    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
 }
 
 /*---------------------------------------------------------------------------------------------------------------------
@@ -193,7 +193,6 @@ void MainWindow::on_startServerBtn_clicked()
 ---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startBroadcastBtn_clicked()
 {
-//    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
     start_radio();
 }
 
@@ -319,27 +318,4 @@ void MainWindow::on_queueSongBtn_clicked()
     }
 
     emit change_song(dir.absoluteFilePath(filename));
-}
-
-/*---------------------------------------------------------------------------------------------------------------------
--- FUNCTION: on_prevSongBtn_clicked
---
--- DATE: APRIL 14 2016
---
--- REVISIONS: APRIL 14 2016
---
--- DESIGNER: Spenser Lee
---
--- PROGRAMMER: Spenser Lee
---
--- INTERFACE: on_prevSongBtn_clicked()
---
--- RETURNS: void
---
--- NOTES:
--- On click for start broadcast button.
----------------------------------------------------------------------------------------------------------------------*/
-void MainWindow::on_prevSongBtn_clicked()
-{
-
 }

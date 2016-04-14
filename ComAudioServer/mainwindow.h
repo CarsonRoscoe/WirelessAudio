@@ -21,8 +21,6 @@ private slots:
 
     void on_startBroadcastBtn_clicked();
 
-    void on_prevSongBtn_clicked();
-
     void on_queueSongBtn_clicked();
 
 signals:
