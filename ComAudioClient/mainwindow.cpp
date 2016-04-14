@@ -242,4 +242,10 @@ void MainWindow::on_stopRecordBtn_clicked()
     audioManager->playRecord();
     //dFile.close();
     //delete audio;
+
+}
+
+void MainWindow::updateSongList(const QString &s)
+{
+    ui->songList->addItem(s);
 }

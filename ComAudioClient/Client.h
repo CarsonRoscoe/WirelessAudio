@@ -33,6 +33,7 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
 // Control Channel
 int ClientSendRequest(int flag);
 DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter);
+extern void *app;
 
 ///////////////////// Macros //////////////////////////////
 #define SERVER_DEFAULT_PORT 7001
