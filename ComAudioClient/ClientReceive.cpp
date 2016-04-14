@@ -593,8 +593,9 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
         Flags = 0;
 
      if (!start) {
-        startP2PAudio = true;
         start = true;
+        startP2PAudio = true;
+        qDebug() << "Start reading audio";
      }
 
     if(packetcounter==146){

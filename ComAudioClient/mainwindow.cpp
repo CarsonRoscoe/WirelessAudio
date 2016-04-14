@@ -28,7 +28,7 @@ bool isRecording, isPlaying;
 QString lastSong;
 QByteArray byteArray;
 int curpos=0;
-AudioManager *audioManager;
+AudioManager *audioManager = NULL;
 ProgramState CurrentState = MediaPlayer;
 
 QThread* multicastThread;
@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
+    listeningBuffer->buffer().reserve(10000000);
     listeningBuffer->open(QIODevice::ReadWrite);
 
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
@@ -283,10 +284,15 @@ void MainWindow::on_dwldFileBtn_clicked()
 
 void MainWindow::on_connectPeerVoiceBtn_clicked()
 {
+    microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
+    microphoneWorker->moveToThread(&microphoneThread);
+    connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
+    connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
+    microphoneThread.start();
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
-   format.setSampleRate(16000);
+   format.setSampleRate(15000);
    format.setChannelCount(1);
    format.setSampleSize(16);
    format.setCodec("audio/pcm");
@@ -319,8 +325,8 @@ void MainWindow::on_recordBtn_clicked()
 
 
    //byteArray=microphoneBuffer->buffer();
-   dFile.setFileName("../RecordTest.raw");
-   dFile.open( QIODevice::ReadWrite);
+   //dFile.setFileName("../RecordTest.raw");
+   //dFile.open( QIODevice::ReadWrite);
    microphoneBuffer->open( QIODevice::ReadWrite);
    QAudioFormat format;
    // Set up the desired format, for example:
@@ -340,9 +346,9 @@ void MainWindow::on_recordBtn_clicked()
 
    //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-    audio->setNotifyInterval(1);
+   //audio->setNotifyInterval(1);
    //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-   connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
+   //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
    //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
    isRecording = true;
    audio->start(microphoneBuffer);
@@ -438,12 +444,7 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             } else {
                 qDebug() << "Could not start P2P listening";
             }
-            microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
-            microphoneWorker->moveToThread(&microphoneThread);
-            connect(&microphoneThread, &QThread::finished, microphoneWorker, &QObject::deleteLater);
-            connect(&microphoneThread, SIGNAL(started()), microphoneWorker, SLOT(doWork()));
-            microphoneThread.start();
-            qDebug() << "Entering voice chat";
+
             break;
     }
 }
