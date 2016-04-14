@@ -72,12 +72,15 @@ int ClientReceiveSetupP2P() {
         return -1;
     }
 
+    int option = 1;
+    setsockopt(p2pListenSock, SOL_SOCKET,(SO_REUSEADDR), (char*)&option, sizeof(option));
+
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
 
     if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
-        qDebug() << "bind) failed with error " << WSAGetLastError();
+        qDebug() << "bind failed with error " << WSAGetLastError();
         return -1;
     }
 
@@ -284,11 +287,10 @@ DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
         return FALSE;
     }
 
-
     while (listenAccept) {
-        qDebug() << "Preparing to accept connection";
-        p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
-        qDebug() << "P2P Accepted a request";
+        if ((p2pAcceptSock = accept(p2pListenSock, NULL, NULL)) == INVALID_SOCKET) {
+            qDebug() << "ClientListenThread Error:" << WSAGetLastError();
+        }
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
             qDebug() << "P2P WSASetEvent failed with error" << WSAGetLastError();
             return FALSE;
@@ -561,6 +563,7 @@ void CleanupRecvP2P() {
     closesocket(p2pAcceptSock);
     p2pListenSockClosed = 1;
     p2pAcceptSockClosed = 1;
+    p2pAcceptEvent = NULL;
     listeningBuffer->buffer().clear();
     listeningBuffer->buffer().resize(0);
     listeningBuffer->close();
@@ -568,6 +571,7 @@ void CleanupRecvP2P() {
     listeningBuffer->seek(listeningBuffer->size());
     listeningBuffer->open(QIODevice::ReadWrite);
     isRecording = false;
+    listenAccept = false;
     qDebug()<<"CleanupP2P invoked";
 }
 
