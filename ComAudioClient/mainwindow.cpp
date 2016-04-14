@@ -66,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     micBuf=new CircularBuffer(CIRCULARBUFFERSIZE, SERVER_PACKET_SIZE, this);
     audioManager = new AudioManager(this);
-    circularBufferRecv = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
+    circularBufferRecv = new CircularBuffer(200, SERVER_PACKET_SIZE, this);
     audioManager->Init(listeningBuffer, circularBufferRecv);
 
     QRegExp regex;
@@ -205,19 +205,19 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
-//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-//            controlSock, CONTROL_PORT)) == 0)
-//    {
-//        strcpy(address, ui->serverIp->text().toLatin1().data());
-//        ui->connectServerBtn->setEnabled(false);
-//        ui->serverIp->setEnabled(false);
-//        ui->disconnectServerBtn->setEnabled(true);
-//        ui->refreshListBtn->setEnabled(true);
-//        ui->sendFileBtn->setEnabled(true);
-//        ui->dwldFileBtn->setEnabled(true);
-//    }
+    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+            controlSock, CONTROL_PORT)) == 0)
+    {
+        strcpy(address, ui->serverIp->text().toLatin1().data());
+        ui->connectServerBtn->setEnabled(false);
+        ui->serverIp->setEnabled(false);
+        ui->disconnectServerBtn->setEnabled(true);
+        ui->sendFileBtn->setEnabled(true);
+        ui->dwldFileBtn->setEnabled(true);
+        QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
+    }
 
-    connect_to_radio();
+    //connect_to_radio();
 }
 
 void MainWindow::on_disconnectServerBtn_clicked()
@@ -227,7 +227,6 @@ void MainWindow::on_disconnectServerBtn_clicked()
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
     ui->disconnectServerBtn->setEnabled(false);
-    ui->refreshListBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
 }
@@ -260,6 +259,7 @@ void MainWindow::play_incoming_stream() {
 void MainWindow::on_refreshListBtn_clicked()
 {
     ClientSendRequest(GET_UPDATE_SONG_LIST);
+    QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
 }
 
 void MainWindow::on_sendFileBtn_clicked()

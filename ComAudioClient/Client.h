@@ -59,12 +59,10 @@ extern void *app;
 #define SEND_SONG_TO_SERVER     2
 #define GET_SONG_FROM_SERVER    3
 
-#define MY_BUF_SIZE 25600
-
 typedef struct _SOCKET_INFORMATION {
     OVERLAPPED Overlapped;
     SOCKET Socket;
-    CHAR Buffer[MY_BUF_SIZE];
+    CHAR Buffer[SERVER_PACKET_SIZE];
     WSABUF DataBuf;
     DWORD BytesSEND;
     DWORD BytesRECV;
