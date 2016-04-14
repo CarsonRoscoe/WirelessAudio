@@ -4,10 +4,14 @@
 #include <QMainWindow>
 #include <QDebug>
 #include <QFileDialog>
+#include <QString>
 #include <QThread>
 #include "audiomanager.h"
 #include "populatemicrophoneworker.h"
 
+enum ProgramState { MediaPlayer = 0, FileTransfer = 1, Radio = 2, VoiceChat = 3 };
+
+extern ProgramState CurrentState;
 
 namespace Ui {
 class MainWindow;
@@ -48,15 +52,19 @@ private slots:
 
     void on_stopRecordBtn_clicked();
 
-    void on_connectOutBtn_clicked();
+    void on_disconnectServerBtn_clicked();
 
-    void on_disconnectOutBtn_clicked();
+    void on_refreshListBtn_clicked();
 
-    void on_openInBtn_clicked();
+    void on_dwldFileBtn_clicked();
 
-    void on_closeInBtn_clicked();
+    void updateSongList(const QString &s);
 
     void cleanupp2p();
+
+    void on_tabWidget_currentChanged(int index);
+
+
 private:
     Ui::MainWindow *ui;
     PopulateMicrophoneWorker *microphoneWorker;

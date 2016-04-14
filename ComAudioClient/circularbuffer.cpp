@@ -37,8 +37,7 @@ bool CircularBuffer::pop(QBuffer* buf) {
 
     qint64 curPos = buf->pos();
     buf->seek(buf->size());
-    //strcpy(global, (const char *)back);
-    //buf->write(global, elementLength);
+
     try {
         buf->write((const char *)back, elementLength);
     } catch (int e) {
@@ -51,8 +50,6 @@ bool CircularBuffer::pop(QBuffer* buf) {
 
     qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
     qDebug()<<"Packets Sent:"<< packetcounter;
-
-    //qDebug() << "Buffer Size:" << buf->size() << "Buffer Pos:" << curPos;
 
 
     back = (char*)back + elementLength;

@@ -14,13 +14,14 @@ LIBS = -lws2_32
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    circularbuffer.cpp \
     serverreceive.cpp \
-    serversend.cpp
+    serversend.cpp \
+    ../ComAudioClient/circularbuffer.cpp \
+    servercontrolchannel.cpp
 
 HEADERS  += mainwindow.h \
-    circularbuffer.h \
-    server.h
+    server.h \
+    ../ComAudioClient/circularbuffer.h
 
 FORMS    += mainwindow.ui
 
