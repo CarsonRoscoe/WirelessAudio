@@ -780,6 +780,10 @@ void MainWindow::on_tabWidget_currentChanged(int index)
         break;
      case Radio:
         //Invoke Radio cleanup
+        udp_thread->close_socket();
+        audioManager->pause();
+        circularBufferRecv->resetBuffer();
+        playing = false;
         break;
      case VoiceChat:
         //Invoke VoiceChat cleanup
