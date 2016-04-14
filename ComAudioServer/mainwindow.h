@@ -23,13 +23,15 @@ private slots:
 
     void on_prevSongBtn_clicked();
 
-    void on_playPauseBtn_clicked();
-
     void on_nextSongBtn_clicked();
+
+signals:
+    void change_song(QString);
 
 private:
 
     void load_local_files();
+    void start_radio();
 
     Ui::MainWindow *ui;
 };

@@ -16,7 +16,6 @@
 #include <QDataStream>
 
 QFile *file;
-
 QFile dFile;
 QAudioInput * audio = NULL;
 QPalette palette;
@@ -25,6 +24,7 @@ QPalette palette;
 CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording, isPlaying;
+bool playing = false;
 QString lastSong;
 QByteArray byteArray;
 int curpos=0;
@@ -32,7 +32,6 @@ AudioManager *audioManager;
 ProgramState CurrentState = MediaPlayer;
 
 QThread* multicastThread;
-
 UDPThread* udp_thread;
 
 ClientUDP udpclient;
@@ -203,31 +202,35 @@ void MainWindow::on_requestFileBtn_clicked()
 
 void MainWindow::on_connectServerBtn_clicked()
 {
-    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-            controlSock, CONTROL_PORT)) == 0)
-    {
-        strcpy(address, ui->serverIp->text().toLatin1().data());
+//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+//            controlSock, CONTROL_PORT)) == 0)
+//    {
+//        strcpy(address, ui->serverIp->text().toLatin1().data());
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
         ui->disconnectServerBtn->setEnabled(true);
         ui->refreshListBtn->setEnabled(true);
         ui->sendFileBtn->setEnabled(true);
         ui->dwldFileBtn->setEnabled(true);
-    }
+//    }
 
     connect_to_radio();
 }
 
 void MainWindow::on_disconnectServerBtn_clicked()
 {
-    closesocket(controlSock);
-    ClientCleanup();
+//    closesocket(controlSock);
+//    ClientCleanup();
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
     ui->disconnectServerBtn->setEnabled(false);
     ui->refreshListBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
+
+    udp_thread->close_socket();
+    audioManager->pause();
+    playing = false;
 }
 
 void MainWindow::connect_to_radio() {
@@ -237,16 +240,14 @@ void MainWindow::connect_to_radio() {
 
     udp_thread->moveToThread(multicastThread);
 
-    //connect(sender, signal, receiver, method, ConnectionType)
-    // TODO: use unique connection...
-    connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()));
-    connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()));
-    connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()));
+    // connect(sender, signal, receiver, method, ConnectionType)
+    connect(udp_thread, SIGNAL(udp_thread_requested()), multicastThread, SLOT(start()), Qt::UniqueConnection);
+    connect(multicastThread, SIGNAL(started()), udp_thread, SLOT(receive()), Qt::UniqueConnection);
+    connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()), Qt::UniqueConnection);
 
     udp_thread->udp_thread_request();
 }
 
-bool playing = false;
 void MainWindow::play_incoming_stream() {
     if (!playing) {
 

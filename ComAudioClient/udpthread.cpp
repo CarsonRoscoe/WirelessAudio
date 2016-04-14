@@ -28,3 +28,12 @@ void UDPThread::receive() {
 void UDPThread::udp_thread_request() {
     emit udp_thread_requested();
 }
+
+void UDPThread::close_socket() {
+    if (!clientUDP.leave_multicast()) {
+        qDebug() << "failed to leave multicast";
+    }
+
+    clientUDP.close();
+    this->thread()->exit();
+}

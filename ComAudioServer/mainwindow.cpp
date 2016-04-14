@@ -10,13 +10,63 @@
 #include <QFileDialog>
 #include <io.h>
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: MainWindow.cpp
+--
+-- PROGRAM: ComAudioServer
+--
+-- FUNCTIONS:
+--   MainWindow(QWidget *parent = 0);
+--   void on_startServerBtn_clicked();
+--   void on_startBroadcastBtn_clicked();
+--   void on_prevSongBtn_clicked();
+--   void on_playPauseBtn_clicked();
+--   void on_nextSongBtn_clicked();
+--   void change_song(QString);
+--   void load_local_files();
+--   void start_radio();
+--   DWORD WINAPI send_thread(LPVOID lp_param);
+--
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee & Micah Willems
+--
+-- PROGRAMMER: Spenser Lee & Micah Willems
+--
+-- NOTES:
+-- This final contains the connecting functions between the UI and the other logic.
+---------------------------------------------------------------------------------------------------------------------*/
+
 ServerUDP udpserver;
+QThread rfw_thread;
 
 CircularBuffer *circularBufferRecv;
-CircularBuffer *cb;
+QFile *file;
 
 DWORD WINAPI send_thread(LPVOID lp_param);
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainWindow (constructor)
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee & Micah Willems
+--
+-- PROGRAMMER: Spenser Lee & Micah Willems
+--
+-- INTERFACE: MainWindow(QWidget *parent)
+--              parent: parent QWidget handle
+--
+-- RETURNS: nothing.
+--
+-- NOTES:
+-- Constructor for the MainWindow object.
+---------------------------------------------------------------------------------------------------------------------*/
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -28,11 +78,47 @@ MainWindow::MainWindow(QWidget *parent) :
     load_local_files();
 }
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: ~MainWindow (destructor)
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee & Micah Willems
+--
+-- PROGRAMMER: Spenser Lee & Micah Willems
+--
+-- INTERFACE: ~MainWindow()
+--
+-- RETURNS: nothing.
+--
+-- NOTES:
+-- Destructor for the MainWindow object.
+---------------------------------------------------------------------------------------------------------------------*/
 MainWindow::~MainWindow()
 {
     delete ui;
 }
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: load_local_files
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: load_local_files()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Looks for the local files and populates a list widget with their names.
+---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::load_local_files() {
     ui->songList->clear();
 
@@ -50,19 +136,80 @@ void MainWindow::load_local_files() {
     ui->songList->setCurrentRow(0);
 }
 
-QThread rfw_thread;
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_startServerBtn_clicked
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_startServerBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- On click for start server button.
+---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_startServerBtn_clicked()
 {
+
+}
+
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_startBroadcastBtn_clicked
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_startBroadcastBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- On click for start broadcast button.
+---------------------------------------------------------------------------------------------------------------------*/
+void MainWindow::on_startBroadcastBtn_clicked()
+{
+//    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
+    start_radio();
+}
+
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: start_radio
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: start_radio()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- Initializes the UDP multicast socket and launches a ReadFileWorker thread.
+---------------------------------------------------------------------------------------------------------------------*/
+void MainWindow::start_radio() {
     if (!udpserver.init_socket(4985)) {
-        qDebug() << "failed to init socket";
+        qWarning() << "failed to init socket";
     }
 
     if (!udpserver.init_multicast("234.5.6.7")) {
-        qDebug() << "failed to set multicast settings";
+        qWarning() << "failed to set multicast settings";
     }
-
-    cb = new CircularBuffer(100, SERVER_PACKET_SIZE, this);
 
     QDir dir(QDir::currentPath());
     if (!dir.cd("../AudioFiles")) {
@@ -71,73 +218,111 @@ void MainWindow::on_startServerBtn_clicked()
 
     QString fileName = ui->songList->currentItem()->text();
 
-    QFile *file = new QFile(dir.absoluteFilePath(fileName));
-    ReadFileWorker *rfw = new ReadFileWorker(file, cb);
+    file = new QFile(dir.absoluteFilePath(fileName));
+    ReadFileWorker *rfw = new ReadFileWorker(file, circularBufferRecv);
 
     rfw->moveToThread(&rfw_thread);
     connect(&rfw_thread, &QThread::finished, rfw, &QObject::deleteLater);
     connect(&rfw_thread, SIGNAL(started()), rfw, SLOT(doWork()));
 
+    connect(this, SIGNAL(change_song(QString)), rfw, SLOT(load_song(QString)), Qt::DirectConnection);
+
     rfw_thread.start();
 
     DWORD thread_id;
     if (CreateThread(NULL, 0, send_thread, (LPVOID) &udpserver, 0, &thread_id) == NULL) {
-        qDebug() << "failed to create thread";
+        qWarning() << "failed to create thread";
     }
 }
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: send_thread
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: DWORD WINAPI send_thread(LPVOID lp_param)
+--                  lp_param: thread parameters
+--
+-- RETURNS: DWORD
+--
+-- NOTES:
+-- Thread for broadcasting data from the circular buffer.
+---------------------------------------------------------------------------------------------------------------------*/
 DWORD WINAPI send_thread(LPVOID lp_param) {
     qDebug() << "thread created";
 
     ServerUDP* serv = (ServerUDP*)lp_param;
     DWORD bytes_to_send = SERVER_PACKET_SIZE;
-    DWORD total = 0;
 
     char message[SERVER_PACKET_SIZE] = { '\0' };
     memset(message, '\0', sizeof(message));
 
-//    QString path = QCoreApplication::applicationDirPath();
-//    path.append("/testing.wav");
-//    QFile myfile(path);
-
-//    if(!myfile.open(QIODevice::ReadWrite)) {
-//        qDebug() << "failed";
-//    }
-
     while (1) {
 
-
-        if (!cb->pop(message)) {
-            qDebug() << "couldn't pop off cb";
+        if (!circularBufferRecv->pop(message)) {
             continue;
         }
 
-//        if (myfile.write(message, MY_BUF_SIZE) < 0) {
-//            qDebug() << "error writing file";
-//        }
-
         if (!serv->broadcast_message(message, &bytes_to_send)) {
-            qDebug() << "broadcast failed";
+            qWarning() << "broadcast failed";
         }
-
     }
 }
-void MainWindow::on_startBroadcastBtn_clicked()
-{
-    controlSockOpen = ServerReceiveSetup(controlSock, CONTROL_PORT, true);
-}
 
-void MainWindow::on_prevSongBtn_clicked()
-{
-
-}
-
-void MainWindow::on_playPauseBtn_clicked()
-{
-
-}
-
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_nextSongBtn_clicked
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_nextSongBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- On click for for next song button. Used for queuing the next song for the stream.
+---------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_nextSongBtn_clicked()
+{
+    QString filename = ui->songList->currentItem()->text();
+    QDir dir(QDir::currentPath());
+    if (!dir.cd("../AudioFiles")) {
+        qWarning() << "Can't find /AudioFiles directory!";
+    }
+
+    emit change_song(dir.absoluteFilePath(filename));
+}
+
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: on_prevSongBtn_clicked
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: on_prevSongBtn_clicked()
+--
+-- RETURNS: void
+--
+-- NOTES:
+-- On click for start broadcast button.
+---------------------------------------------------------------------------------------------------------------------*/
+void MainWindow::on_prevSongBtn_clicked()
 {
 
 }

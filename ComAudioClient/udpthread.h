@@ -12,6 +12,7 @@ class UDPThread : public QObject
 
 public:
     void udp_thread_request();
+    void close_socket();
 
 public slots:
     void receive();

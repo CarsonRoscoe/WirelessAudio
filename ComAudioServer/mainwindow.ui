@@ -63,13 +63,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="playPauseBtn">
-        <property name="text">
-         <string>Play</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="nextSongBtn">
         <property name="text">
          <string>Next</string>

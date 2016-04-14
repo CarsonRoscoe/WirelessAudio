@@ -4,6 +4,48 @@
 
 #include "serverudp.h"
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- SOURCE FILE: ServerUDP.cpp
+--
+-- PROGRAM: ComAudioServer
+--
+-- FUNCTIONS:
+--    bool init_socket(short port);
+--    bool init_multicast(const char *name);
+--    bool broadcast_message(char *message, LPDWORD lp_bytes_sent);
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- NOTES:
+-- Networking functions for multicast UDP.
+---------------------------------------------------------------------------------------------------------------------*/
+
+
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: init_socket
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: init_socket(short port)
+--              port:       port on which to host socket.
+--
+-- RETURNS: bool success
+--
+-- NOTES:
+-- Creates the UDP socket.
+---------------------------------------------------------------------------------------------------------------------*/
 bool ServerUDP::init_socket(short port) {
 
     int opt = 1;
@@ -40,6 +82,25 @@ bool ServerUDP::init_socket(short port) {
     return true;
 }
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: init_multicast
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: init_multicast(const char *name)
+--              name: the IP subnet mast to host multicast on.
+--
+-- RETURNS: bool success
+--
+-- NOTES:
+-- Sets the socket options for multicast.
+---------------------------------------------------------------------------------------------------------------------*/
 bool ServerUDP::init_multicast(const char *name) {
     BOOL loop_back = false;
     u_long time_to_live = 1;
@@ -74,6 +135,26 @@ bool ServerUDP::init_multicast(const char *name) {
     return true;
 }
 
+/*---------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: broadcast_message
+--
+-- DATE: APRIL 14 2016
+--
+-- REVISIONS: APRIL 14 2016
+--
+-- DESIGNER: Spenser Lee
+--
+-- PROGRAMMER: Spenser Lee
+--
+-- INTERFACE: broadcast_message(char *message, LPDWORD lp_bytes_sent)
+--                  message:        pointer to data
+--                  lp_bytes_sent:  amount of data to send
+--
+-- RETURNS: bool success
+--
+-- NOTES:
+-- Broadcasts data to socket.
+---------------------------------------------------------------------------------------------------------------------*/
 bool ServerUDP::broadcast_message(char *message, LPDWORD lp_bytes_sent) {
     sock_info.DataBuf.buf = message;
     sock_info.DataBuf.len = *lp_bytes_sent;
@@ -89,24 +170,22 @@ bool ServerUDP::broadcast_message(char *message, LPDWORD lp_bytes_sent) {
                   &(sock_info.Overlapped), NULL) < 0) {
 
         if (WSAGetLastError() != WSA_IO_PENDING) {
-            qDebug() << "UDP WSASendTo() failed: " << WSAGetLastError();
+            qWarning() << "UDP WSASendTo() failed: " << WSAGetLastError();
             return false;
         }
 
         if (WSAWaitForMultipleEvents(1, &sock_info.Overlapped.hEvent, false, INFINITE, false) == WAIT_TIMEOUT) {
-            qDebug() << "UDP WSASendTo() timeout";
+            qWarning() << "UDP WSASendTo() timeout";
             return false;
         }
     }
 
     if(!WSAGetOverlappedResult(sock_info.Socket, &(sock_info.Overlapped), &sock_info.BytesSEND, FALSE, &flags))
     {
-        qDebug() << "UDP WSAGetOverlappedResult() failed: " << WSAGetLastError();
+        qWarning() << "UDP WSAGetOverlappedResult() failed: " << WSAGetLastError();
         return false;
 
     }
-//    qDebug() << "ServerUDP::Broadcast>>Bytes Sent:[" << sock_info.BytesSEND << "]";
-
     return true;
 }
 

@@ -17,7 +17,9 @@ public:
 
     bool init_socket(short port);
     bool init_multicast(const char *name);
+    bool leave_multicast();
     bool receive();
+    bool close();
 
     SOCKET_INFORMATION  sock_info;
 

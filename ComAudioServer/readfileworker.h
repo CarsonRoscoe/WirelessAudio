@@ -10,9 +10,11 @@ class ReadFileWorker : public QObject {
     Q_OBJECT
 public:
     ReadFileWorker(QFile * file, CircularBuffer * circularBuffer);
+    ~ReadFileWorker();
 
 public slots:
     void doWork();
+    void load_song(QString filename);
 
 signals:
     void done();
@@ -20,6 +22,7 @@ signals:
 private:
     QFile * file;
     CircularBuffer * circularBuffer;
+    bool playing = true;
 };
 
 #endif // READFILETHREAD_H
