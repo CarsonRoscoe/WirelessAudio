@@ -344,18 +344,14 @@ void MainWindow::on_recordBtn_clicked()
        format = info.nearestFormat(format);
    }
 
-   //audioFile = new QAudioInput(format, this);
    audio = new QAudioInput(format, this);
-   //audio->setNotifyInterval(1);
-   //connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(handleStateChanged(QAudio::State)));
-   //connect(audio,SIGNAL(notify()),this,SLOT(StoreToBuffer()));
-   //QTimer::singleShot(5000, this, SLOT(on_pushButton_2_clicked()));
+   microphoneBuffer->buffer().resize(0);
+   microphoneBuffer->reset();
+   microphoneBuffer->setBuffer(new QByteArray());
+   microphoneBuffer->close();
+   microphoneBuffer->open(QIODevice::ReadWrite);
    isRecording = true;
    audio->start(microphoneBuffer);
-  // if(packetcounter>10)
-
-   //audioFile->start(&dFile);
-
 }
 
 void MainWindow::on_stopRecordBtn_clicked()
@@ -420,15 +416,13 @@ void MainWindow::on_tabWidget_currentChanged(int index)
             delete audio;
             audio = NULL;
             micSendPacket = 0;
+            micPos = 0;
         }
-       /* listeningBuffer->
+        listeningBuffer->buffer().resize(0);
         listeningBuffer->reset();
+        listeningBuffer->setBuffer(new QByteArray());
         listeningBuffer->close();
         listeningBuffer->open(QIODevice::ReadWrite);
-        */
-        ClientReceiveSetupP2P();
-        ClientListenP2P();
-
         break;
     default:
         qDebug()<<"This state should never happen?";

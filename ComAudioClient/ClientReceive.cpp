@@ -73,7 +73,7 @@ int ClientReceiveSetupP2P() {
     }
 
     int option = 1;
-    setsockopt(p2pListenSock, SOL_SOCKET,(SO_REUSEADDR), (char*)&option, sizeof(option));
+    setsockopt(p2pListenSock, SOL_SOCKET,SO_REUSEADDR, (char*)&option, sizeof(option));
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -168,8 +168,6 @@ int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event)
         qDebug() << errMsg;
         return -1;
     }
-
-    qDebug() << "Success!";
     return 0;
 }
 
@@ -219,8 +217,6 @@ int ClientListenP2P() {
         qDebug() << "Create ClientListenP2P failed with error " << GetLastError();
         return -1;
     }
-
-    qDebug () << "Listening for P2P on port " << P2P_DEFAULT_PORT;
 
     return 0;
 }
@@ -279,7 +275,6 @@ DWORD WINAPI ClientListenThread(LPVOID lpParameter)
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
     HANDLE hThread;
     DWORD ThreadId;
-    qDebug() << "ClientListenThreadP2P";
     listenAccept = true;
 
     if ((hThread = CreateThread(NULL, 0, ClientReceiveThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
@@ -382,7 +377,6 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
         acceptSockClosed = true;
-        qDebug() << errMsg;
 
 
         Flags = 0;
@@ -419,10 +413,8 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     // Save the accept event in the event array.
     EventArray[0] = p2pAcceptEvent;
 
-    qDebug() << "ClientReceiveThreadP2P: Preparing to WSAWaitForMultipleEvents";
     while (TRUE) {
         Index = WSAWaitForMultipleEvents(1, EventArray, FALSE, WSA_INFINITE, TRUE);
-        qDebug() << "Event Triggered";
         if (Index == WSA_WAIT_FAILED) {
             qDebug() << "WSAWaitForMultipleEvents failed with error " << WSAGetLastError();
             return FALSE;
@@ -450,7 +442,6 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
 
     sprintf_s(errMsg, "Socket %d connected\n", p2pAcceptSock);
     p2pAcceptSockClosed = 1;
-    qDebug() << errMsg;
 
     Flags = 0;
     // TCP WSA receive
@@ -563,6 +554,7 @@ void CleanupRecvP2P() {
     closesocket(p2pAcceptSock);
     p2pListenSockClosed = 1;
     p2pAcceptSockClosed = 1;
+    WSACleanup();
     p2pAcceptEvent = NULL;
     listeningBuffer->buffer().clear();
     listeningBuffer->buffer().resize(0);
@@ -572,7 +564,6 @@ void CleanupRecvP2P() {
     listeningBuffer->open(QIODevice::ReadWrite);
     isRecording = false;
     listenAccept = false;
-    qDebug()<<"CleanupP2P invoked";
 }
 
 //Carson, designed by Micah
@@ -628,7 +619,6 @@ DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
     bool lastPacket = false;
     hReceiveFile = (HANDLE) lpParameter;
 
-    qDebug() << "Enter ClientWriteToFileP2P";
     while(!lastPacket) {
         if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0) {
             circularBufferRecv->pop(sizeBuf);
