@@ -4,6 +4,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <QDebug>
 #include "Client.h"
 
@@ -55,7 +56,7 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
     char *message = (char *)calloc(CONTROL_PACKET_SIZE + 1, sizeof(char));
     int flag = (int)lpParameter;
     int sentb = 0, recvb = 1, totalb = 0, i = 0;
-    wchar_t *path;
+    wchar_t path[260];
 
     switch (flag)
     {
@@ -91,7 +92,6 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         while(totalb < CONTROL_PACKET_SIZE && recvb != SOCKET_ERROR)
         {
             recvb = recv(controlSock, recvbuff, CONTROL_PACKET_SIZE, 0);
-            qDebug() << "received bytes:" << recvb;
             totalb += recvb;
         }
         if (recvbuff[0] == 0)
@@ -102,11 +102,14 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         break;
     case GET_SONG_FROM_SERVER:
         sendbuff[0] = flag;
-        strcpy(recvFileName, "classical_chopin.wav");
+        strcpy(recvFileName, "test.wav");
         strcat(sendbuff, recvFileName);
-        mbtowc(path, recvFileName, 100);
+        mbstowcs(&path[0], recvFileName, strlen(recvFileName));
+        qDebug() << recvFileName;
+        qDebug() << QString::fromWCharArray(path);
         DeleteFile(path);
         hReceiveFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+        ShowLastErr(false);
         hReceiveClosed = 1;
         ClientReceiveSetup(listenSock, CLIENT_DEFAULT_PORT, acceptEvent);
         ClientListen();

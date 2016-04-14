@@ -46,7 +46,7 @@ struct sockaddr_in server, otherClient;
 char errMsg[ERRORSIZE];
 
 //////////////////// Debug vars ///////////////////////////
-//#define DEBUG_MODE
+#define DEBUG_MODE
 int totalbytessent;
 
 /*---------------------------------------------------------------------------------------
@@ -83,8 +83,8 @@ int ClientSendSetup(char* addr, SOCKET &sock, int port)
         ShowLastErr(true);
         qDebug() << "DLL not found!\n";
 		return -1;
-	}
-    qDebug() << "test";
+    }
+
     // TCP Open Socket
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     {
