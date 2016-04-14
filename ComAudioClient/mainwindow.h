@@ -38,11 +38,7 @@ private slots:
 
     void on_resumeBtn_clicked();
 
-    void on_connectPeerBtn_clicked();
-
     void on_sendFileBtn_clicked();
-
-    void on_requestFileBtn_clicked();
 
     void on_connectServerBtn_clicked();
 
@@ -78,7 +74,7 @@ private:
     AudioManager *audioManager;
 
     void get_local_files();
-    QString get_selected_list_item(int tab);
+    QString get_selected_list_item();
 };
 
 #endif // MAINWINDOW_H

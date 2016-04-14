@@ -135,10 +135,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->setupUi(this);
 
-    ui->peerIp->setValidator(val);
     ui->serverIp->setValidator(val);
     ui->peerVoiceIp->setValidator(val);
-    ui->peerIp->setText("192.168.0.7");
     ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
 
@@ -185,13 +183,9 @@ MainWindow::~MainWindow()
 -- NOTES:
 -- This functions returns a QString of the selected song.
 ----------------------------------------------------------------------------------------------------------------------*/
-QString MainWindow::get_selected_list_item(int tab) {
+QString MainWindow::get_selected_list_item() {
 
-    if (tab == 0) {
-        return ui->songList->currentItem()->text();
-    } else {
-        return ui->localFileList->currentItem()->text();
-    }
+    return ui->songList->currentItem()->text();
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: get_local_files()
@@ -213,7 +207,6 @@ QString MainWindow::get_selected_list_item(int tab) {
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::get_local_files() {
 
-    ui->localFileList->clear();
     ui->songList->clear();
 
     QStringList nameFilter("*.wav");
@@ -226,9 +219,7 @@ void MainWindow::get_local_files() {
 
     QStringList files = directory.entryList(nameFilter);
 
-    ui->localFileList->addItems(files);
     ui->songList->addItems(files);
-    ui->localFileList->setCurrentRow(0);
     ui->songList->setCurrentRow(0);
 }
 
@@ -270,7 +261,7 @@ void MainWindow::on_playPauseBtn_clicked()
             qWarning() << "Can't find /AudioFiles directory!";
         }
 
-        QString fileName = get_selected_list_item(0);
+        QString fileName = get_selected_list_item();
 
         qDebug() << "fileName = " << fileName;
         qDebug() << "lastSong = " << lastSong;
@@ -405,19 +396,6 @@ void MainWindow::on_prevSongBtn_clicked()
 
 }
 
-// ---- File Transfer Functions ----
-
-void MainWindow::on_connectPeerBtn_clicked()
-{
-
-}
-
-void MainWindow::on_requestFileBtn_clicked()
-{
-
-}
-
-// ---- Radio Streaming Functions ----
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: on_connectServerBtn_clicked()
 --

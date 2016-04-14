@@ -275,7 +275,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
         bytesRead += bytes_to_send;
         if (bytesRead < bytesPerSecond)
             continue;
-        Sleep(400);
+        SleepEx(300, true);
         bytesRead = 0;
     }
 }
@@ -298,7 +298,7 @@ DWORD WINAPI send_thread(LPVOID lp_param) {
 -- NOTES:
 -- On click for for next song button. Used for queuing the next song for the stream.
 ---------------------------------------------------------------------------------------------------------------------*/
-void MainWindow::on_nextSongBtn_clicked()
+void MainWindow::on_queueSongBtn_clicked()
 {
     QString filename = ui->songList->currentItem()->text();
     QDir dir(QDir::currentPath());
