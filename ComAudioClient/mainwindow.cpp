@@ -373,12 +373,15 @@ void MainWindow::on_tabWidget_currentChanged(int index)
         break;
      case VoiceChat:
         //Invoke VoiceChat cleanup
-        CleanupP2P();
+        CleanupRecvP2P();
+        isRecording = false;
         if (audio != NULL) {
+            CleanupSendP2P();
             audio->reset();
             audio->stop();
             delete audio;
             audio = NULL;
+            micSendPacket = 0;
         }
         ClientReceiveSetupP2P();
         ClientListenP2P();

@@ -1,44 +1,34 @@
 #include "populatemicrophoneworker.h"
 
+int micSendPacket = 0;
+int micPos = 0;
+
 PopulateMicrophoneWorker::PopulateMicrophoneWorker(CircularBuffer * circularBuffer, QBuffer * buffer) {
     this->circularBuffer = circularBuffer;
     this->buffer = buffer;
 }
 
+void PopulateMicrophoneWorker::reinit(QBuffer * buffer) {
+    this->buffer = buffer;
+    micSendPacket = 0;
+    micPos = 0;
+}
+
 void PopulateMicrophoneWorker::doWork() {
-    int SendPacket = 0;
-    int pos = 0;
     qDebug() << "PopulateMicrophoneWorker doWork Enter";
-    while(true) {
-       while (buffer->size() >= pos + SERVER_PACKET_SIZE ) {
-            qDebug()<<buffer->bytesAvailable();
-            // if(buffer->bytesAvailable()>=SERVER_PACKET_SIZE){
-            SendPacket++;
+    while(alive) {
+       while (alive && buffer->size() >= micPos + SERVER_PACKET_SIZE ) {
+            if (!alive || buffer == NULL)
+                return;
+            micSendPacket++;
             char tempbuff[SERVER_PACKET_SIZE];
             int curPos = buffer->pos();
-            buffer->seek(pos);
+            buffer->seek(micPos);
             buffer->read(tempbuff, SERVER_PACKET_SIZE);
             buffer->seek(curPos);
-            pos += SERVER_PACKET_SIZE;
-            //qDebug()<<"actual pos" << pos;
+            micPos += SERVER_PACKET_SIZE;
             circularBuffer->pushBack(tempbuff);
-            qDebug() << buffer->size() << pos;
-           // }
-          //  else
         }
-       /*
-        if (SendPacket == 10) {
-            SendPacket=0;
-            isRecording = false;
-            pos = 0;
-            audio->stop();
-            delete buffer;
-            buffer = new QBuffer();
-            buffer->open(QIODevice::ReadWrite);
-            //buffer->buffer().reserve(2000000);
-            audio->start(buffer);
-        }
-        */
     }
     qDebug() << "PopulateMicrophoneWorker doWork Exit";
 }

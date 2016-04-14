@@ -533,7 +533,7 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
-void CleanupP2P() {
+void CleanupRecvP2P() {
     GlobalFree(p2pSI);
     closesocket(p2pListenSock);
     closesocket(p2pAcceptSock);
@@ -575,28 +575,9 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLA
         startP2PAudio = true;
         start = true;
      }
-   /* ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
-    if (listeningBuffer->size() > 1200000) {
-        listeningBuffer->buffer().resize(0);
-        listeningBuffer->seek(0);
-        listeningBuffer->open(QIODevice::ReadWrite);
-        ClientListenP2P();
-        return;
-    } else {
-        qDebug() << listeningBuffer->size();
-    }
 
-    if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
-        qDebug() << "Writing received packet to circular buffer failed";
-
-    Flags = 0;
-    ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
-    p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
-    p2pSI->DataBuf.buf = p2pSI->Buffer;*/
-
-    //SleepEx(10, true);
     if(packetcounter==146){
-        CleanupP2P();
+        CleanupRecvP2P();
         ClientReceiveSetupP2P();
         ClientListenP2P();
         packetcounter = 0;

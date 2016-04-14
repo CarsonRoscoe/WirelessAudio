@@ -423,3 +423,8 @@ void ShowLastErr(bool wsa)
         NULL, dlasterr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&errMsg, 0, NULL);
     qDebug() << QString::fromWCharArray(errMsg);
 }
+
+void CleanupSendP2P() {
+    closesocket(p2pSendSock);
+    p2pSendSockOpen = false;
+}
