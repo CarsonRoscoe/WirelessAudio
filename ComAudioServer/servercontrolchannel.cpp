@@ -93,7 +93,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
         {
             recvb = recv(Clients[clientID], recvbuff, CONTROL_PACKET_SIZE, 0);
             strcat(message, recvbuff);
-            qDebug() << "received bytes:" << recvb;
             totalb += recvb;
             if (recvb == -1 || recvb == 0) {
                 qDebug() << "Socket" << Clients[clientID] << "closed";
@@ -111,7 +110,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     GetSongList();
                     memset(sendbuff, 0, sizeof(sendbuff));
                     for (int i = 0; i < numSongs; i++) {
-                        qDebug() << songList[i];
                         strcpy(sendbuff, songList[i]);
                         sentb = send(Clients[clientID], songList[i], CONTROL_PACKET_SIZE, 0);
                     }
@@ -123,7 +121,6 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     message[strlen(message) - 1] = 0;
                     strcpy(recvFileName, "\.\\Library\\");
                     strcat(recvFileName, message);
-                    qDebug() << recvFileName;
                     listenSockClosed = ServerReceiveSetup(listenSock, SERVER_DEFAULT_PORT, false, acceptEvent);
                     ServerListen();
                     sendbuff[0] = listenSockClosed;
@@ -136,11 +133,8 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
                     message[strlen(message) - 1] = 0;
                     strcpy(sendFileName, "./Library/");
                     strcat(sendFileName, message);
-                    qDebug() << sendFileName;
                     file = new QFile(QString::fromLatin1(sendFileName));
                     file->open(QIODevice::ReadOnly);
-                    qDebug() << file->fileName();
-                    qDebug() << file->exists();
                     hFile = (HANDLE) _get_osfhandle(file->handle());
                     ShowLastErr(false);
                     hClosed = 0;
