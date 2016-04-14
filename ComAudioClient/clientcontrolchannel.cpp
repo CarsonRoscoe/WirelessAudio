@@ -11,8 +11,9 @@
 ////////// "Real" of the externs in Server.h //////////////
 char sendFileName[100], recvFileName[100];
 char **songList = new char*[100];
+int numSongs = 0;
 SOCKET controlSock;
-bool controlSockClosed = 1;
+bool controlSockClosed = 1, songRequestDone = 0;
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientSend
@@ -65,6 +66,8 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         memset(message, 0, sizeof(message));
         sendbuff[0] = flag;
         sentb = send(controlSock, sendbuff, CONTROL_PACKET_SIZE, 0);
+        numSongs = 0;
+        songRequestDone = 0;
         while(recvb != SOCKET_ERROR)
         {
             recvb = recv(controlSock, recvbuff, CONTROL_PACKET_SIZE, 0);
@@ -78,12 +81,13 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
                 }
                 songList[i] = new char[100];
                 strcpy(songList[i], message);
-                qDebug() << songList[i];
                 i++;
+                numSongs++;
                 totalb -= CONTROL_PACKET_SIZE;
                 memset(message, 0, sizeof(message));
             }
         }
+        songRequestDone = 1;
         break;
     case SEND_SONG_TO_SERVER:
         sendbuff[0] = flag;
@@ -102,7 +106,6 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         break;
     case GET_SONG_FROM_SERVER:
         sendbuff[0] = flag;
-        strcpy(recvFileName, "test.wav");
         strcat(sendbuff, recvFileName);
         mbstowcs(&path[0], recvFileName, strlen(recvFileName));
         qDebug() << recvFileName;

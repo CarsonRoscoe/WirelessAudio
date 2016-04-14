@@ -68,7 +68,7 @@ QPalette palette;
 CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording, isPlaying;
-bool playing = false;
+bool playing = false, connectedControl = false;
 QString lastSong;
 QByteArray byteArray;
 int curpos=0;
@@ -270,16 +270,17 @@ void MainWindow::on_playPauseBtn_clicked()
             audioManager->resume();
         } else {
             if (lastSong != "") {
-                audioManager->stop();
+                audioManager->pause();
             }
             lastSong = fileName;
 
             qDebug() << dir.absoluteFilePath(fileName);
 
             QFile *file = new QFile(dir.absoluteFilePath(fileName));
+            listeningBuffer->seek(listeningBuffer->size());
             audioManager->loadSong(file);
+            audioManager->resume();
         }
-
     }
 }
 /*------------------------------------------------------------------------------------------------------------------
@@ -416,17 +417,18 @@ void MainWindow::on_prevSongBtn_clicked()
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_connectServerBtn_clicked()
 {
-//    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
-//            controlSock, CONTROL_PORT)) == 0)
-//    {
-//        strcpy(address, ui->serverIp->text().toLatin1().data());
+    if ((controlSockClosed = ClientSendSetup(ui->serverIp->text().toLatin1().data(),
+            controlSock, CONTROL_PORT)) == 0)
+    {
+        strcpy(address, ui->serverIp->text().toLatin1().data());
         ui->connectServerBtn->setEnabled(false);
         ui->serverIp->setEnabled(false);
+        ui->refreshListBtn->setEnabled(true);
         ui->disconnectServerBtn->setEnabled(true);
         ui->sendFileBtn->setEnabled(true);
         ui->dwldFileBtn->setEnabled(true);
-//    }
-        QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
+        on_refreshListBtn_clicked();
+    }
 
     connect_to_radio();
 }
@@ -450,18 +452,20 @@ void MainWindow::on_connectServerBtn_clicked()
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_disconnectServerBtn_clicked()
 {
-//    closesocket(controlSock);
-//    ClientCleanup();
+    closesocket(controlSock);
+    ClientCleanup();
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
+    ui->refreshListBtn->setEnabled(false);
     ui->disconnectServerBtn->setEnabled(false);
     ui->sendFileBtn->setEnabled(false);
     ui->dwldFileBtn->setEnabled(false);
-
+    ui->playlistList->clear();
     udp_thread->close_socket();
     audioManager->pause();
     circularBufferRecv->resetBuffer();
     playing = false;
+    connectedControl = false;
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: connect_to_radio()
@@ -494,6 +498,7 @@ void MainWindow::connect_to_radio() {
     connect(udp_thread, SIGNAL(stream_data_recv()), this, SLOT(play_incoming_stream()), Qt::UniqueConnection);
 
     udp_thread->udp_thread_request();
+
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: connect_to_radio()
@@ -540,8 +545,14 @@ void MainWindow::play_incoming_stream() {
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_refreshListBtn_clicked()
 {
+    qDebug() << "fuck you qt";
     ClientSendRequest(GET_UPDATE_SONG_LIST);
-    QTimer::singleShot(5000, this, SLOT(on_refreshListBtn_clicked()));
+    while(songRequestDone == 0){}
+    ui->playlistList->clear();
+    for (int i = 0; i < numSongs; i++)
+    {
+        ui->playlistList->addItem(QString::fromLatin1(songList[i]));
+    }
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION: on_sendFileBtn_clicked()
@@ -593,6 +604,7 @@ void MainWindow::on_sendFileBtn_clicked()
 ----------------------------------------------------------------------------------------------------------------------*/
 void MainWindow::on_dwldFileBtn_clicked()
 {
+    strcpy(recvFileName, ui->playlistList->currentItem()->text().toLatin1());
     ClientSendRequest(GET_SONG_FROM_SERVER);
 }
 

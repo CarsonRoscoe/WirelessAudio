@@ -18,6 +18,7 @@ private:
     CircularBuffer * circularBuffer;
     QBuffer * buffer;
     bool stayAlive = true;
+    bool overwrite;
 };
 
 #endif // POPULATEBUFFERWORKER_H

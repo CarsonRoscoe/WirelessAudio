@@ -70,7 +70,6 @@ PopulateBufferWorker::PopulateBufferWorker(CircularBuffer * circularBuffer, QBuf
 ----------------------------------------------------------------------------------------------------------------------*/
 PopulateBufferWorker::~PopulateBufferWorker() {
     stayAlive = false;
-    buffer->close();
 }
 /*------------------------------------------------------------------------------------------------------------------
 -- FUNCTION:void PopulateBufferWorker::doWork()

@@ -47,7 +47,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="mediaTab">
        <attribute name="title">
@@ -157,6 +157,16 @@
             </property>
             <property name="text">
              <string>Send File</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="refreshListBtn">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Refresh List</string>
             </property>
            </widget>
           </item>

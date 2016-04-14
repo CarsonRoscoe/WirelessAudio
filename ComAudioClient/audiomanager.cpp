@@ -176,7 +176,6 @@ AudioManager::~AudioManager() {
     delete audioOutput;
     delete circularBuffer;
     delete buffer;
-    delete readFileWorker;
     delete populateBufferWorker;
 }
 
@@ -339,8 +338,10 @@ void AudioManager::pause() {
 --  Handles resuming our active QAudioOutput device. Essentially encapsulates it.
 ---------------------------------------------------------------------------------------*/
 void AudioManager::resume() {
-    audioOutput->resume();
-    songState = Playing;
+    if (audioOutput->state() == QAudio::SuspendedState) {
+        audioOutput->resume();
+        songState = Playing;
+    }
 }
 
 /*---------------------------------------------------------------------------------------
@@ -364,16 +365,12 @@ void AudioManager::resume() {
 --  Handles stoping our active QAudioOutput device. Essentially encapsulates it.
 ---------------------------------------------------------------------------------------*/
 void AudioManager::stop() {
-    if (songState == Stopped)
-        return;
     audioOutput->stop();
-    file->close();
-    delete audioOutput;
     songState = Stopped;
 }
 
 /*---------------------------------------------------------------------------------------
---	METHOD:         ski[
+--	METHOD:         skip
 --
 --	DATE:			April 1st, 2016
 --
@@ -426,11 +423,9 @@ void AudioManager::skip(float seconds) {
 --  it away.
 ---------------------------------------------------------------------------------------*/
 QIODevice * AudioManager::play() {
-    qDebug() << "Play entered";
     device = buffer;
-    audioOutput->start(device);
-    qDebug() << "Playing device, current buffered amount: " << buffer->size();
-    return device;
+    audioOutput->start(buffer);
+    return buffer;
 }
 
 /*---------------------------------------------------------------------------------------
