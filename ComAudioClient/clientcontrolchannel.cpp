@@ -108,8 +108,9 @@ DWORD WINAPI ClientControlThreadSend(LPVOID lpParameter)
         DeleteFile(path);
         hReceiveFile = CreateFile(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
         hReceiveClosed = 1;
-        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
+        ClientReceiveSetup(listenSock, CLIENT_DEFAULT_PORT, acceptEvent);
         ClientListen();
+        sentb = send(controlSock, sendbuff, SERVER_PACKET_SIZE, 0);
         break;
     default:
         qDebug() << "Invalid request";
