@@ -35,16 +35,17 @@
 #include <QBuffer>
 #include "server.h"
 
-////////// "Real" of the externs in Server.h ///////////////
+////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock;
 bool listenSockClosed = 1, acceptSockClosed = 1;
 WSAEVENT acceptEvent, defaultEvent = INVALID_HANDLE_VALUE;
 LPSOCKET_INFORMATION SI;
 char errMsg[ERRORSIZE];
 char recvFileName[100];
-bool closeListen = 1;
+///////////////// File Globals ////////////////////////////
+bool listenAccept;
 
-////////////////// Debug vars ///////////////////////////////
+////////////////// Debug vars /////////////////////////////
 #define DEBUG_MODE
 int totalbytesreceived, totalbyteswritten;
 
@@ -206,7 +207,7 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
 {
     HANDLE hThread;
     DWORD ThreadId;
-    closeListen = 1;
+    listenAccept = 1;
     qDebug() << "ServerListenThread()";
     if ((hThread = CreateThread(NULL, 0, ServerReceiveThread, lpParameter, 0, &ThreadId)) == NULL)
     {
@@ -215,7 +216,7 @@ DWORD WINAPI ServerListenThread(LPVOID lpParameter)
         return FALSE;
     }
 
-    while (closeListen)
+    while (listenAccept)
     {
         acceptSock = accept(listenSock, NULL, NULL);
 
@@ -286,10 +287,7 @@ DWORD WINAPI ServerReceiveThread(LPVOID lpParameter)
         }
 
         if (acceptSock == -1)
-        {
-            qDebug() << "CAUGHT YOU you fucker";
             return TRUE;
-        }
 
         WSAResetEvent(EventArray[Index - WSA_WAIT_EVENT_0]);
 
@@ -390,7 +388,7 @@ void CALLBACK ServerCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0 || BytesTransferred == -1)
     {
-        closeListen = 0;
+        listenAccept = 0;
         closesocket(SI->Socket);
         closesocket(listenSock);
         closesocket(acceptSock);

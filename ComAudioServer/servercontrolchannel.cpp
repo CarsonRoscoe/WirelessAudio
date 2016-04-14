@@ -92,11 +92,12 @@ DWORD WINAPI ServerListenControlChannel(LPVOID lpParameter)
             strcat(message, recvbuff);
             qDebug() << "received bytes:" << recvb;
             totalb += recvb;
-            if (recb == -1) {
+            if (recvb == -1) {
                 closesocket(Clients[clientID]);
                 free(sendbuff);
                 free(recvbuff);
                 free(message);
+                return TRUE;
             }
             if (totalb >= SERVER_PACKET_SIZE)
             {
