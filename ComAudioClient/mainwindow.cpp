@@ -127,6 +127,7 @@ void MainWindow::on_connectServerBtn_clicked()
 
 void MainWindow::on_disconnectServerBtn_clicked()
 {
+    closesocket(controlSock);
     ClientCleanup();
     ui->connectServerBtn->setEnabled(true);
     ui->serverIp->setEnabled(true);
@@ -156,7 +157,7 @@ void MainWindow::on_sendFileBtn_clicked()
 
 void MainWindow::on_dwldFileBtn_clicked()
 {
-
+    ClientSendRequest(GET_SONG_FROM_SERVER);
 }
 
 // ---- PTP Microphone Chat Functions ----
