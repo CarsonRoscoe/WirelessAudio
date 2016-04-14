@@ -47,7 +47,6 @@ public slots:
     void playRecord();
     void handleStateChanged(QAudio::State newState);
 
-
 private:
     QAudioFormat format;
     QObject *parent;

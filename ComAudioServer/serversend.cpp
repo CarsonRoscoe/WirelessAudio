@@ -36,6 +36,10 @@ HANDLE hFile;
 bool hClosed = 1;
 char sendFileName[100];
 
+////////////////// Debug vars /////////////////////////////
+#define DEBUG_MODE
+int totalbytessent;
+
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ServerSendSetup
 --
@@ -192,12 +196,19 @@ DWORD WINAPI ServerSendThread(LPVOID lpParameter)
             sendbuff[dwBytesRead] = 'd';
             sendbuff[dwBytesRead + 1] = 'e';
             sendbuff[dwBytesRead + 2] = 'l';
-            sendbuff[dwBytesRead + 2] = 'i';
-            sendbuff[dwBytesRead + 2] = 'm';
+            sendbuff[dwBytesRead + 3] = 'i';
+            sendbuff[dwBytesRead + 4] = 'm';
+#ifdef DEBUG_MODE
+            qDebug() << "Delim attached";
+#endif
         }
 
         // TCP Send
         sentBytes = send(sendSock[clientID], sendbuff, SERVER_PACKET_SIZE, 0);
+#ifdef DEBUG_MODE
+        qDebug() << "Bytes sent:" << sentBytes;
+        qDebug() << "Total bytes sent:" << (totalbytessent += sentBytes);
+#endif
     }
     free(sendbuff);
     return TRUE;
