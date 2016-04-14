@@ -87,7 +87,7 @@ int ClientReceiveSetupP2P() {
         return -1;
     }
 
-    p2pListenSockOpen = true;
+    p2pListenSockClosed = 0;
 
     if ((p2pAcceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
         qDebug() << "WSACreateEvent() failed with error " << WSAGetLastError();
@@ -445,7 +445,7 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
     sprintf_s(errMsg, "Socket %d connected\n", p2pAcceptSock);
-    p2pAcceptSockClosed = true;
+    p2pAcceptSockClosed = 0;
     qDebug() << errMsg;
 
     Flags = 0;
@@ -557,8 +557,8 @@ void CleanupRecvP2P() {
     GlobalFree(p2pSI);
     closesocket(p2pListenSock);
     closesocket(p2pAcceptSock);
-    p2pListenSockOpen = false;
-    p2pAcceptSockOpen = false;
+    p2pListenSockClosed = 1;
+    p2pAcceptSockClosed = 1;
     listeningBuffer->buffer().clear();
     listeningBuffer->buffer().resize(0);
     listeningBuffer->close();

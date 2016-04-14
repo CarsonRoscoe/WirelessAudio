@@ -12,7 +12,7 @@ TARGET = ComAudioClient
 TEMPLATE = app
 LIBS = -lws2_32
 
-SOURCES += main.cpp\
+SOURCES += main.cpp \
         mainwindow.cpp \
     audiomanager.cpp \
     circularbuffer.cpp \
@@ -20,7 +20,7 @@ SOURCES += main.cpp\
     ClientSend.cpp \
     populatebufferworker.cpp \
     readfileworker.cpp \
-    clientcontrolchannel.cpp
+    clientcontrolchannel.cpp \
     populatemicrophoneworker.cpp \
     win32communicationworker.cpp
 

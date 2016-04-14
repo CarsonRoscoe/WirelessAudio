@@ -29,6 +29,8 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter);
 //P2P
+int ClientReceiveSetupP2P();
+int ClientSendSetupP2P(char* addr);
 int ClientSendMicrophoneData();
 int ClientListenP2P();
 void CleanupRecvP2P();

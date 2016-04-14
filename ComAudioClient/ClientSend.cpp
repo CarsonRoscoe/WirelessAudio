@@ -166,7 +166,7 @@ int ClientSendSetupP2P(char* addr) {
 
     qDebug () << "Connected!";
 
-    p2pSendSockOpen = true;
+    p2pSendSockClosed = 1;
 
     return 0;
 }
@@ -433,5 +433,5 @@ void ShowLastErr(bool wsa)
 
 void CleanupSendP2P() {
     closesocket(p2pSendSock);
-    p2pSendSockOpen = false;
+    p2pSendSockClosed = 1;
 }

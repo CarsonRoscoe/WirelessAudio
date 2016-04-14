@@ -20,8 +20,6 @@ CircularBuffer  *circularBufferRecv, *micBuf;
 QBuffer *microphoneBuffer, *listeningBuffer;
 bool isRecording, isPlaying;
 QString lastSong;
-bool isRecording;
-bool isPlaying;
 QByteArray byteArray;
 int curpos=0;
 AudioManager *audioManager;
@@ -38,7 +36,6 @@ MainWindow::MainWindow(QWidget *parent) :
     microphoneBuffer = new QBuffer(parent);
     microphoneBuffer->buffer().reserve(10000000);
     listeningBuffer = new QBuffer(parent);
-    audioManager->Init(listeningBuffer);
     //p2pListenSockClosed = ClientReceiveSetup(p2pListenSock, P2P_DEFAULT_PORT, p2pAcceptEvent);
     //ClientListenP2P();
     listeningBuffer->open(QIODevice::ReadWrite);
