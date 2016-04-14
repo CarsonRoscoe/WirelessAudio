@@ -58,7 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->serverIp->setValidator(val);
     ui->peerVoiceIp->setValidator(val);
     ui->peerIp->setText("192.168.0.7");
-    ui->serverIp->setText("127.0.0.7");
+    ui->serverIp->setText("192.168.0.5");
     ui->peerVoiceIp->setText("192.168.0.7");
 
     microphoneWorker = new PopulateMicrophoneWorker(micBuf, microphoneBuffer);
