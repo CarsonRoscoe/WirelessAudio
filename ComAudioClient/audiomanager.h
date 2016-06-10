@@ -6,11 +6,22 @@
 #include <QFile>
 #include <QDebug>
 #include <QMetaType>
+#include <QAudioInput>
+#include <QTimer>
+#include "win32communicationworker.h"
 #include "wavheader.h"
 #include "songstate.h"
 #include "circularbuffer.h"
 #include "readfileworker.h"
 #include "populatebufferworker.h"
+#include "Client.h"
+
+extern QAudioInput * audio;
+extern QPalette palette;
+
+extern QAudioInput * audioFile;
+extern CircularBuffer * cb, *circularBufferRecv, *micBuf;
+extern QBuffer *microphoneBuffer, *listeningBuffer;
 
 //Carson
 class AudioManager : public QObject {
@@ -26,27 +37,35 @@ public:
     void setVolume(float volume);
     void loadSong(QFile * file);
     void stop();
-    void playRecord();
-    void Init(QBuffer * buf);
+    void Init(QBuffer * buf, CircularBuffer * circ);
+
+    QBuffer *buffer;
+    QAudioOutput *audioOutput = NULL;
 
 public slots:
     void receivedWavHeader(wav_hdr wavHeader);
+    void playRecord();
+    void handleStateChanged(QAudio::State newState);
 
 private:
     QAudioFormat format;
-    QAudioOutput *audio;
     QObject *parent;
     QFile *file;
     QIODevice *device;
     float volume = 10;
     SongState songState;
     CircularBuffer *circularBuffer;
-    QBuffer *buffer;
     ReadFileWorker *readFileWorker;
-    PopulateBufferWorker *populateBufferWorker;
+
+    PopulateBufferWorker *populateBufferWorker = NULL;
+    Win32CommunicationWorker *win32CommunicationWorker;
+
     QThread readWorkerThread;
     QThread populateBufferThread;
+    QThread win32CommunicationThread;
     int bytesPerSecond;
 };
+
+extern AudioManager *audioManager;
 
 #endif // AUDIOMANAGER_H

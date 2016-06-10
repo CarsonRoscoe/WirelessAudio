@@ -8,7 +8,7 @@
 --              DWORD WINAPI ClientListenThread(LPVOID lpParameter);
 --              DWORD WINAPI ClientReceiveThread(LPVOID lpParameter);
 --              void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
---                  LPWSAOVERLAPPED Overlapped, DWORD InFlags);
+--                LPWSAOVERLAPPED Overlapped, DWORD InFlags);
 --              DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter);
 --
 -- DATE:        April 3, 2016
@@ -38,19 +38,44 @@
 
 ////////// "Real" of the externs in Server.h //////////////
 SOCKET listenSock, acceptSock, p2pListenSock, p2pAcceptSock;
-bool listenSockOpen, acceptSockOpen, p2pListenSockOpen, p2pAcceptSockOpen;
+bool listenSockClosed = 1, acceptSockClosed = 1, p2pListenSockClosed = 1, p2pAcceptSockClosed = 1;
 WSAEVENT acceptEvent, p2pAcceptEvent;
 HANDLE hReceiveFile;
-bool hReceiveOpen;
+bool hReceiveClosed = 1;
 LPSOCKET_INFORMATION SI, p2pSI;
+bool start;
 
+//////////////////// Debug vars ///////////////////////////
+#define DEBUG_MODE
+int totalbytesreceived, totalbyteswritten;
 
+//////////////////// File Globals /////////////////////////
+bool listenAccept;
 
-//Carson, designed by Micah
+/*------------------------------------------------------------------------------------------------------------------
+-- FUNCTION: MainWindow(QWidget *parent)
+--
+-- DATE: April 13, 2016
+--
+-- REVISIONS: (Date and Description)
+--
+-- DESIGNER: Micah Williams
+--
+-- PROGRAMMER: Carson Roscoe
+--
+-- INTERFACE: int ClientReceiveSetupP2P()
+--
+-- RETURNS: int: -1 if failed.
+--
+-- NOTES:
+-- This initializes a socket to listen for connections.
+----------------------------------------------------------------------------------------------------------------------*/
 int ClientReceiveSetupP2P() {
     int ret;
     WSADATA wsaData;
     SOCKADDR_IN InternetAddr;
+
+    start = false;
 
     if ((ret = WSAStartup(0x0202, &wsaData)) != 0) {
         qDebug() << "WSAStartup failed with error " << ret;
@@ -64,12 +89,15 @@ int ClientReceiveSetupP2P() {
         return -1;
     }
 
+    int option = 1;
+    setsockopt(p2pListenSock, SOL_SOCKET,SO_REUSEADDR, (char*)&option, sizeof(option));
+
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
     InternetAddr.sin_port = htons(P2P_DEFAULT_PORT);
 
     if (bind(p2pListenSock, (PSOCKADDR)&InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR) {
-        qDebug() << "bind) failed with error " << WSAGetLastError();
+        qDebug() << "bind failed with error " << WSAGetLastError();
         return -1;
     }
 
@@ -79,16 +107,15 @@ int ClientReceiveSetupP2P() {
         return -1;
     }
 
-    p2pListenSockOpen = true;
+    p2pListenSockClosed = 0;
 
     if ((p2pAcceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT) {
         qDebug() << "WSACreateEvent() failed with error " << WSAGetLastError();
         return -1;
     }
-
-    qDebug() << "P2P Listening Setup Success";
-    return 0;
 }
+
+
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientReceiveSetup
@@ -109,7 +136,7 @@ int ClientReceiveSetupP2P() {
 --	NOTES:
 --      This function sets up all the listening port info to receive file transfers.
 ---------------------------------------------------------------------------------------*/
-int ClientReceiveSetup()
+int ClientReceiveSetup(SOCKET &sock, int port, WSAEVENT &event)
 {
     int ret;
     WSADATA wsaData;
@@ -124,7 +151,7 @@ int ClientReceiveSetup()
     }
 
     // TCP create WSA socket
-    if ((listenSock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
+    if ((sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0,
         WSA_FLAG_OVERLAPPED)) == INVALID_SOCKET)
     {
         sprintf_s(errMsg, "Failed to get a socket %d\n", WSAGetLastError());
@@ -135,9 +162,9 @@ int ClientReceiveSetup()
 
     InternetAddr.sin_family = AF_INET;
     InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    InternetAddr.sin_port = htons(CLIENT_DEFAULT_PORT);
+    InternetAddr.sin_port = htons(port);
 
-    if (bind(listenSock, (PSOCKADDR)&InternetAddr,
+    if (bind(sock, (PSOCKADDR)&InternetAddr,
         sizeof(InternetAddr)) == SOCKET_ERROR)
     {
         sprintf_s(errMsg, "bind() failed with error %d\n", WSAGetLastError());
@@ -145,22 +172,20 @@ int ClientReceiveSetup()
         return -1;
     }
     // TCP listen on socket (no corresponding UDP call)
-    if (listen(listenSock, 5))
+    if (listen(sock, 1))
     {
         sprintf_s(errMsg, "listen() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;
         return -1;
     }
-    listenSockOpen = true;
 
-    if ((acceptEvent = WSACreateEvent()) == WSA_INVALID_EVENT)
+    if ((event = WSACreateEvent()) == WSA_INVALID_EVENT)
     {
         sprintf_s(errMsg, "WSACreateEvent() failed with error %d\n", WSAGetLastError());
         qDebug() << errMsg;
         return -1;
     }
 
-    qDebug() << "Success!";
     return 0;
 }
 
@@ -186,13 +211,13 @@ int ClientReceiveSetup()
 --      This is the qt-friendly (non-threaded) function called by the GUI to start the
 --      listening for and receiving of file transfer data through threaded function calls.
 ---------------------------------------------------------------------------------------*/
-int ClientListen(HANDLE hFile)
+int ClientListen()
 {
     HANDLE hThread;
     DWORD ThreadId;
-    hReceiveOpen = true;
+    hReceiveClosed = 0;
 
-    if ((hThread = CreateThread(NULL, 0, ClientListenThread, (LPVOID) hFile, 0, &ThreadId)) == NULL)
+    if ((hThread = CreateThread(NULL, 0, ClientListenThread, 0, 0, &ThreadId)) == NULL)
     {
         sprintf_s(errMsg, "Create ServerListenThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
@@ -201,7 +226,25 @@ int ClientListen(HANDLE hFile)
     return 0;
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientListen
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      int ClientListenP2P()
+--
+--  RETURNS:        Returns 0 on success, -1 on failure
+--
+--	NOTES:
+--      This is the qt-friendly (non-threaded) function called by the GUI to start the
+--      listening for and receiving of file transfer data through threaded function calls.
+---------------------------------------------------------------------------------------*/
 int ClientListenP2P() {
     HANDLE hThread;
     DWORD ThreadId;
@@ -210,8 +253,6 @@ int ClientListenP2P() {
         qDebug() << "Create ClientListenP2P failed with error " << GetLastError();
         return -1;
     }
-
-    qDebug () << "Listening for P2P on port " << P2P_DEFAULT_PORT;
 
     return 0;
 }
@@ -243,15 +284,16 @@ DWORD WINAPI ClientListenThread(LPVOID lpParameter)
 {
     HANDLE hThread;
     DWORD ThreadId;
+    listenAccept = 1;
 
     if ((hThread = CreateThread(NULL, 0, ClientReceiveThread, lpParameter, 0, &ThreadId)) == NULL)
     {
-        sprintf_s(errMsg, "Create ServerReceiveThread failed with error %lu\n", GetLastError());
+        sprintf_s(errMsg, "Create ClientReceiveThread failed with error %lu\n", GetLastError());
         qDebug() << errMsg;
         return FALSE;
     }
 
-    while (TRUE)
+    while (listenAccept)
     {
         acceptSock = accept(listenSock, NULL, NULL);
 
@@ -265,21 +307,44 @@ DWORD WINAPI ClientListenThread(LPVOID lpParameter)
     return TRUE;
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientListenThreadP2P
+--
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter the handle to the file to be written to
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the listen thread that first initiates the listening loop, by starting
+--  a thread which listens on an accepted server connection to initiate an event,
+--  triggering the receive thread.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientListenThreadP2P(LPVOID lpParameter) {
     HANDLE hThread;
     DWORD ThreadId;
+    listenAccept = true;
 
     if ((hThread = CreateThread(NULL, 0, ClientReceiveThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
         qDebug() << "Create ServerReceiveThread failed with error " << GetLastError();
         return FALSE;
     }
 
-    while (TRUE) {
-        p2pAcceptSock = accept(p2pListenSock, NULL, NULL);
-        qDebug() << "P2P Accepted a request";
+    while (listenAccept) {
+        if ((p2pAcceptSock = accept(p2pListenSock, NULL, NULL)) == INVALID_SOCKET) {
+            qDebug() << "ClientListenThread Error:" << WSAGetLastError();
+            return FALSE;
+        }
         if (WSASetEvent(p2pAcceptEvent) == FALSE) {
-            qDebug() << "WSASetEvent failed with error " << WSAGetLastError();
+            qDebug() << "P2P WSASetEvent failed with error" << WSAGetLastError();
             return FALSE;
         }
     }
@@ -316,7 +381,7 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
     HANDLE hThread;
     DWORD Index, RecvBytes, Flags, LastErr, ThreadId;
     LPSOCKET_INFORMATION SocketInfo;
-
+    totalbytesreceived = 0;
     // Save the accept event in the event array.
 
     EventArray[0] = acceptEvent;
@@ -343,7 +408,10 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
             }
         }
 
-        //WSAResetEvent(EventArray[Index - WSA_WAIT_EVENT_0]);
+        if (acceptSock == -1)
+            return TRUE;
+
+        WSAResetEvent(EventArray[Index - WSA_WAIT_EVENT_0]);
 
         // Create a socket information structure to associate with the accepted socket.
 
@@ -365,8 +433,7 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
         SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
         sprintf_s(errMsg, "Socket %d connected\n", acceptSock);
-        acceptSockOpen = true;
-        qDebug() << errMsg;
+        acceptSockClosed = true;
 
 
         Flags = 0;
@@ -393,7 +460,27 @@ DWORD WINAPI ClientReceiveThread(LPVOID lpParameter)
     return TRUE;
 }
 
-//Carson, designer by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientReceiveThreadP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:      N/A
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:      DWORD WINAPI ClientReceiveThreadP2P(
+--                                         LPVOID lpParameter the handle to the file to be written to)
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the receiving thread for receiving microphone audio data from tcp.
+--  After a server connection is accepted, the event fires, and a receive with
+--  a callback thread is made, initiating the callback loop and receive handling.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     WSAEVENT EventArray[1];
     HANDLE hThread;
@@ -403,11 +490,8 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     // Save the accept event in the event array.
     EventArray[0] = p2pAcceptEvent;
 
-    // Wait for accept() to signal an event and also process WorkerRoutine() returns.
-    qDebug() << "ClientReceiveThreadP2P: Preparing to WSAWaitForMultipleEvents";
     while (TRUE) {
         Index = WSAWaitForMultipleEvents(1, EventArray, FALSE, WSA_INFINITE, TRUE);
-        qDebug() << "Event Triggered";
         if (Index == WSA_WAIT_FAILED) {
             qDebug() << "WSAWaitForMultipleEvents failed with error " << WSAGetLastError();
             return FALSE;
@@ -434,21 +518,16 @@ DWORD WINAPI ClientReceiveThreadP2P(LPVOID lpParameter) {
     SocketInfo->DataBuf.buf = SocketInfo->Buffer;
 
     sprintf_s(errMsg, "Socket %d connected\n", p2pAcceptSock);
-    p2pAcceptSockOpen = true;
-    qDebug() << errMsg;
+    p2pAcceptSockClosed = 1;
 
     Flags = 0;
     // TCP WSA receive
+
     if (WSARecv(SocketInfo->Socket, &(SocketInfo->DataBuf), 1, &RecvBytes, &Flags, &(SocketInfo->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return FALSE;
         }
-    }
-
-    if ((hThread = CreateThread(NULL, 0, ClientWriteToFileThreadP2P, lpParameter, 0, &ThreadId)) == NULL) {
-        qDebug() << "Create ServerWriteToFileThread failed with error " << GetLastError();
-        return FALSE;
     }
 
     SleepEx(10000, true);
@@ -506,18 +585,29 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
 
     if (Error != 0 || BytesTransferred == 0)
     {
+        listenAccept = 0;
         closesocket(SI->Socket);
-        acceptSockOpen = false;
+        closesocket(listenSock);
+        closesocket(acceptSock);
+        listenSockClosed = 1;
+        acceptSockClosed = 1;
         GlobalFree(SI);
+        totalbytesreceived = 0;
         return;
     }
 
+    SleepEx(10, true);
+
     char slotsize[SERVER_PACKET_SIZE];
     sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(SI->DataBuf.buf)) == false)
-    {
-        qDebug() << "Writing received packet to circular buffer failed";
-    }
+
+    while ((circularBufferRecv->pushBack(slotsize)) == false){}
+    while ((circularBufferRecv->pushBack(SI->DataBuf.buf)) == false){}
+
+#ifdef DEBUG_MODE
+    qDebug() << "\nBytes received:" << BytesTransferred;
+    qDebug() << "Total bytes received:" << (totalbytesreceived += BytesTransferred);
+#endif
 
     Flags = 0;
     ZeroMemory(&(SI->Overlapped), sizeof(WSAOVERLAPPED));
@@ -537,12 +627,74 @@ void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
     }
 }
 
-//Carson, designed by Micah
-void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
-                                LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   CleanupRecvP2P()
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Carson Roscoe
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:     void CleanupRecvP2P()
+--
+--  RETURNS:        void
+--
+--	NOTES:
+--  This function cleans up the used socket when the client wants to stop receiving.
+---------------------------------------------------------------------------------------*/
+void CleanupRecvP2P() {
+    GlobalFree(p2pSI);
+    closesocket(p2pListenSock);
+    closesocket(p2pAcceptSock);
+    p2pListenSockClosed = 1;
+    p2pAcceptSockClosed = 1;
+    WSACleanup();
+    p2pAcceptEvent = NULL;
+    listeningBuffer->buffer().clear();
+    listeningBuffer->buffer().resize(0);
+    listeningBuffer->close();
+    listeningBuffer->setBuffer(new QByteArray());
+    listeningBuffer->seek(listeningBuffer->size());
+    listeningBuffer->open(QIODevice::ReadWrite);
+    isRecording = false;
+    listenAccept = false;
+}
+
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientCallbackP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe, Thomas Yu
+--
+--  INTERFACE:      void CALLBACK ClientCallback(DWORD Error, DWORD BytesTransferred,
+--                      LPWSAOVERLAPPED Overlapped, DWORD InFlags)
+--
+--                      DWORD Error: error message resulting from WSARecv
+--                      DWORD BytesTransferred: the number of bytes received from tcp
+--                      LPWSAOVERLAPPED Overlapped: the overlapped structure, to be used
+--                          in the next WSARecv call
+--                      DWORD InFlags: unused
+--
+--  RETURNS:        void
+--
+--	NOTES:
+--  This is the callback thread for the WSARecv call for server microphone audio transfer. After
+--  receiving the data from tcp, the number of bytes transferred is put in a slot in
+--  the circular buffer followed by the data in the next slot, to distinguish how
+--  much of the data is valid.
+---------------------------------------------------------------------------------------*/
+void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred, LPWSAOVERLAPPED Overlapped, DWORD InFlags) {
     DWORD RecvBytes, Flags, LastErr;
     // Reference the WSAOVERLAPPED structure as a SOCKET_INFORMATION structure
-    p2pSI = (LPSOCKET_INFORMATION)Overlapped;
+    LPSOCKET_INFORMATION p2pSI = (LPSOCKET_INFORMATION)Overlapped;
 
     if (Error != 0)
         qDebug() << "I/O operation failed with error " << Error;
@@ -551,112 +703,85 @@ void CALLBACK ClientCallbackP2P(DWORD Error, DWORD BytesTransferred,
         qDebug() << "Closing socket " << p2pSI->Socket;
 
     if (Error != 0 || BytesTransferred == 0) {
-        closesocket(p2pSI->Socket);
-        acceptSockOpen = false;
+        ClientCleanup();
         GlobalFree(p2pSI);
         return;
     }
+      if (circularBufferRecv->pushBack(p2pSI->DataBuf.buf) == false)
+          qDebug() << "error pushing back CR " << p2pSI->Socket;
+        Flags = 0;
 
-    char slotsize[SERVER_PACKET_SIZE];
-    sprintf(slotsize, "%04lu", BytesTransferred);
-    if ((circularBufferRecv->pushBack(slotsize)) == false || (circularBufferRecv->pushBack(p2pSI->DataBuf.buf)) == false)
-        qDebug() << "Writing received packet to circular buffer failed";
+     if (!start) {
+        start = true;
+        startP2PAudio = true;
+        qDebug() << "Start reading audio";
+     }
 
-    Flags = 0;
-    ZeroMemory(&(p2pSI->Overlapped), sizeof(WSAOVERLAPPED));
+    if(packetcounter==146){
+        CleanupRecvP2P();
+        ClientReceiveSetupP2P();
+        ClientListenP2P();
+        packetcounter = 0;
+        return;
+    }
 
-    p2pSI->DataBuf.len = SERVER_PACKET_SIZE;
-    p2pSI->DataBuf.buf = p2pSI->Buffer;
-
-    SleepEx(1, true);
-    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &RecvBytes, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
+    if (WSARecv(p2pSI->Socket, &(p2pSI->DataBuf), 1, &p2pSI->BytesRECV, &Flags, &(p2pSI->Overlapped), ClientCallbackP2P) == SOCKET_ERROR) {
         if ((LastErr = WSAGetLastError()) != WSA_IO_PENDING) {
             qDebug() << "WSARecv() failed with error " << LastErr;
             return;
         } else {
-            SleepEx(10000, true);
+            SleepEx(25000, true);
         }
     }
-
 }
 
-//Carson, designed by Micah
+/*---------------------------------------------------------------------------------------
+--	FUNCTION:   ClientWriteToFileThreadP2P
+--
+--	DATE:			April 7, 2016
+--
+--	REVISIONS:
+--
+--	DESIGNERS:		Micah Willems
+--
+--	PROGRAMMER:		Carson Roscoe
+--
+--  INTERFACE:      DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter)
+--
+--                      LPVOID lpParameter: the handle to the file to be written to
+--
+--  RETURNS:        Returns TRUE on success, FALSE on failure
+--
+--	NOTES:
+--  This is the thread for handling processing of file transfer data received from
+--  the server/sender and put into the circular buffer by the receiving callback. While the
+--  receiving callback populates the circular buffer from the incoming tcp/udp stream,
+--  this threaded function pulls out data items two at a time as they become
+--  available, to lessen the load on the callback. For each pair of data items it
+--  pulls out, the first is the number that indicates how many bytes is actual data
+--  in the other. The function then checks for the delimeter indicating the last
+--  packet, and aftewards writes the data to the open file.
+---------------------------------------------------------------------------------------*/
 DWORD WINAPI ClientWriteToFileThreadP2P(LPVOID lpParameter) {
-
-    QString filename = "RecordBufferdata.txt";
-    QFile file(filename);
-    file.open(QIODevice::ReadWrite);
-    QTextStream stream(&file);
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
     int packetSize;
     bool lastPacket = false;
+    hReceiveFile = (HANDLE) lpParameter;
 
-    qDebug() << "Enter ClientWriteToFileP2P";
     while(!lastPacket) {
         if (circularBufferRecv->length > 0 && (circularBufferRecv->length % 2) == 0) {
             circularBufferRecv->pop(sizeBuf);
             sizeBuf[5] = '\0';
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
-            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
-                 a < packetSize - 5; a++, b++, c++, d++, e++)
-            {
-                if (writeBuf[a] == 'm') {
-                    if (writeBuf[b] == 'i') {
-                        if (writeBuf[c] == 'l') {
-                            if (writeBuf[d] == 'e') {
-                                if (writeBuf[e] == 'd') {
-                                    packetSize = a - 1;
-#ifdef DEBUG_MODE
-                                    qDebug() << "Last packet";
-#endif
-                                    break;
-                                } else {
-                                    a += 4;
-                                    b += 4;
-                                    c += 4;
-                                    d += 4;
-                                    e += 4;
-                                }
-                            } else {
-                                a += 3;
-                                b += 3;
-                                c += 3;
-                                d += 3;
-                                e += 3;
-                            }
-                        } else {
-                            a += 2;
-                            b += 2;
-                            c += 2;
-                            d += 2;
-                            e += 2;
-                        }
-                    } else {
-                        a++;
-                        b++;
-                        c++;
-                        d++;
-                        e++;
-                    }
-                }
-            }
-
             int cur = listeningBuffer->pos();
-            int newpos = listeningBuffer->size() > 0 ? listeningBuffer->size() : 0;
-            listeningBuffer->seek(newpos);
-            listeningBuffer->write(writeBuf, packetSize);
-            listeningBuffer->write(writeBuf, packetSize);
-            for(int i =0; i < packetSize;i++){
-                stream <<writeBuf[i];
-            }
+            listeningBuffer->write(writeBuf);
             listeningBuffer->seek(cur);
         }
     }
     return TRUE;
 }
-
 
 /*---------------------------------------------------------------------------------------
 --	FUNCTION:   ClientWriteToFileThread
@@ -690,10 +815,9 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
     DWORD byteswrittenfile = 0;
     char sizeBuf[SERVER_PACKET_SIZE];
     char writeBuf[SERVER_PACKET_SIZE];
-    char delim[6] = {(int)'d', (int)'e', (int)'l', (int)'i', (int)'m', '\0'}, *ptrEnd, *ptrBegin = writeBuf;
     int packetSize;
     bool lastPacket = false;
-    hReceiveFile = (HANDLE) lpParameter;
+    totalbyteswritten = 0;
 
     while(!lastPacket)
     {
@@ -701,20 +825,67 @@ DWORD WINAPI ClientWriteToFileThread(LPVOID lpParameter) {
         {
             circularBufferRecv->pop(sizeBuf);
             sizeBuf[5] = '\0';
+            qDebug() << "\nsizeBuf:" << sizeBuf;
             packetSize = strtol(sizeBuf, NULL, 10);
             circularBufferRecv->pop(writeBuf);
-            if ((ptrEnd = strstr(writeBuf, delim)))
+            for (int a = 0, b = 1, c = 2, d = 3, e = 4;
+                 a < packetSize - 5; a++, b++, c++, d++, e++)
             {
-                lastPacket = true;
-                packetSize = ptrEnd - ptrBegin;
+                if (writeBuf[a] == 'd') {
+                    if (writeBuf[b] == 'e') {
+                        if (writeBuf[c] == 'l') {
+                            if (writeBuf[d] == 'i') {
+                                if (writeBuf[e] == 'm') {
+                                    lastPacket = true;
+                                    packetSize = a;
+#ifdef DEBUG_MODE
+                                    qDebug() << "Last packet";
+#endif
+                                    break;
+                                }
+                            } else {
+                                a += 4;
+                                b += 4;
+                                c += 4;
+                                d += 4;
+                                e += 4;
+                            }
+                        } else {
+                            a += 3;
+                            b += 3;
+                            c += 3;
+                            d += 3;
+                            e += 3;
+                        }
+                    } else {
+                        a += 2;
+                        b += 2;
+                        c += 2;
+                        d += 2;
+                        e += 2;
+                    }
+                } else {
+                    a ++;
+                    b ++;
+                    c ++;
+                    d ++;
+                    e ++;
+                }
             }
             if (WriteFile(hReceiveFile, writeBuf, packetSize, &byteswrittenfile, NULL) == FALSE)
             {
-                qDebug() << "Couldn't write to server file\n";
                 ShowLastErr(false);
+                qDebug() << "Couldn't write to server file\n";
                 return FALSE;
             }
+#ifdef DEBUG_MODE
+            qDebug() << "\nBytes to write:" << packetSize;
+            qDebug() << "Bytes written:" << byteswrittenfile;
+            qDebug() << "Total bytes written:" << (totalbyteswritten += byteswrittenfile);
+#endif
         }
     }
+    CloseHandle(hReceiveFile);
+    hReceiveClosed = 1;
     return TRUE;
 }
